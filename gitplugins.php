@@ -190,7 +190,7 @@ class plugin {
         }
 
         exec('git status', $gitOutput, $gitReturn);
-        $this->output($gitOutput, true);
+        $this->output('git status', $gitOutput, true);
         return $gitReturn;
     }
 
@@ -214,13 +214,12 @@ class plugin {
         );
 
         exec($cmdline, $gitOutput, $gitReturn);
-        echo $cmdline . "\n";
-        $this->output($gitOutput);
+        $this->output($cmdline, $gitOutput);
         return $gitReturn;
     }
 
     /**
-     * upgrade the target plugins with "git checkout "
+     * upgrade the target plugins with git checkout / git rebase
      */
     public function upgrade() {
         global $rootdir;
@@ -235,21 +234,34 @@ class plugin {
             return RETURN_ERROR;
         }
 
+        exec('git log -1 --oneline', $gitOutput, $gitReturn);
+        $this->output(' git log -1 --oneline', $gitOutput);
+        $gitOutput = [];
         exec('git fetch', $gitOutput, $gitReturn);
-        echo 'git fetch' . "\n";
-        $this->output($gitOutput);
+        $this->output('git fetch', $gitOutput);
 
         if (!empty($this->branch)) {
             $cmdline = sprintf("git checkout %s", $this->branch);
+            exec($cmdline, $gitOutput, $gitReturn);
+            $this->output($cmdline, $gitOutput);
+            $cmdline = "git rebase";
+            exec($cmdline, $gitOutput, $gitReturn);
+            $this->output($cmdline, $gitOutput);
+            return $gitReturn;
         } elseif (!empty($this->revision)) {
             $cmdline = sprintf("git checkout %s", $this->revision);
+            exec($cmdline, $gitOutput, $gitReturn);
+            $this->output($cmdline, $gitOutput);
+            $cmdline = "git rebase";
+            exec($cmdline, $gitOutput, $gitReturn);
+            $this->output($cmdline, $gitOutput);
+            return $gitReturn;
         } else {
-            $cmdline = 'git checkout';
+            $cmdline = "git rebase";
+            exec($cmdline, $gitOutput, $gitReturn);
+            $this->output($cmdline, $gitOutput);
+            return $gitReturn;
         }
-        exec($cmdline, $gitOutput, $gitReturn);
-        echo $cmdline . "\n";
-        $this->output($gitOutput);
-        return $gitReturn;
     }
 
     /**
@@ -302,13 +314,15 @@ class plugin {
 
     /**
      * display the output on the terminal in an easily readable way (draft)
-     * @param array $lines
+     * @param string $cmdline "input" command line
+     * @param array $lines output lines
      * @param boolean $always : display whatever this->verb
      */
-    private function output($lines, $always = false) {
+    private function output($cmdline, $lines, $always = false) {
         if ($always || $this->verb > 0) {
+            echo "  < " . $cmdline . "\n";
             foreach ($lines as $line) {
-                echo "  > " . $line . "\n";
+                echo "    > " . $line . "\n";
             }
         }
     }
