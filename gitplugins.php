@@ -263,12 +263,18 @@ class plugin {
             return 'Invalid URL for repository: ' . $this->repository;
         }
 
-        $cmdline = sprintf('git ls-remote %s --exit-code', str_replace('://', '://FAKE:FAKE@', $this->repository)); //added fake credentials
+        $cmdline = sprintf('git ls-remote --exit-code  %s  %s',
+                str_replace('://', '://FAKE:FAKE@', $this->repository), //fake user/pass to avoid fallback on interactive cli
+                (!empty($this->branch) ? $this->branch: '') );
         exec($cmdline, $gitOutput, $gitReturn);
         if ($gitReturn) {
-            return 'Git repository does not exist or unreachable: ' . $this->repository;
+            return 'Git repository does not exist or unreachable or branch does not exist: ' . $this->repository . ' ' . $this->branch;
         }
 
+        if (!empty($this->branch) && !empty($this->revision)) {
+            return 'You must declare AT MOST one branch OR one revision';
+        }
+        
         $dir = dirname($rootdir . $this->path);
         if (!file_exists($dir) || !is_dir($dir)) {
             return 'Invalid path: ' . $this->path;
