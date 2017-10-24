@@ -1,8 +1,10 @@
 <?php
 
 /**
- * @copyright  2017 Silecs {@link http://www.silecs.info/societe}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
+ * @copyright 2017 Silecs {@link http://www.silecs.info/societe}
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @version   1.0 : 2017102400
  */
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
