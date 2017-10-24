@@ -11,11 +11,10 @@ The `gitplugins.conf` file is a list of all the plugins you want to manage
 (install, upgrade...) with the format:
 ```
     'local/mailtest' => [
-        'repository' => 'https://github.com/michael-milette/moodle-local_mailtest', // mandatory
         'path' => '/local/mailtest', // mandatory ; path from the moodle root
-        'plugin' => 'local_mailtest', // optional ; as declared in the plugin 'version.php' file
-        'branch' => '', // optional
-        'hash' => '', // optional ; precise git hash, if it's convenient
+        'gitrepository' => 'https://github.com/michael-milette/moodle-local_mailtest', // mandatory
+        'gitbranch' => '', // optional ; git branch (incompatible with gitrevision)
+        'gitrevision' => '', // optional ; precise git revision (hash or tag)  (incompatible with gitbranch)
     ],
 ```
 

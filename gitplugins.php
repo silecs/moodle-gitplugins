@@ -112,7 +112,7 @@ class plugin {
     public $path;           // mandatory ; path from the moodle root
     public $plugin;         // optional ; as declared in plugin's version.php
     public $branch = null;  // optional
-    public $hash = null;    // optional ; precise git hash, if it's convenient
+    public $revision = null;    // optional ; precise git revision (hash or tag)
     public $diagnostic;
     public $diagMsg = '';
     public $verb;  //verbosity
@@ -127,12 +127,12 @@ class plugin {
             $newplugin = new self;
             // mandatory attributes:
             $newplugin->name = $name;
-            $newplugin->repository = $plugin['repository'];
             $newplugin->path = $plugin['path'];
+            $newplugin->repository = $plugin['gitrepository'];
             // optional attributes:
             $newplugin->plugin = (isset($plugin['plugin']) ? $plugin['plugin'] : null);
-            $newplugin->branch = (isset($plugin['branch']) ? $plugin['branch'] : null);
-            $newplugin->hash = (isset($plugin['hash']) ? $plugin['hash'] : null);
+            $newplugin->branch = (isset($plugin['gitbranch']) ? $plugin['gitbranch'] : null);
+            $newplugin->revision = (isset($plugin['gitrevision']) ? $plugin['gitrevision'] : null);
             // other init
             $newplugin->verb = $verb;
             $res[] = $newplugin;
@@ -241,8 +241,8 @@ class plugin {
 
         if (!empty($this->branch)) {
             $cmdline = sprintf("git checkout %s", $this->branch);
-        } elseif (!empty($this->hash)) {
-            $cmdline = sprintf("git checkout %s", $this->hash);
+        } elseif (!empty($this->revision)) {
+            $cmdline = sprintf("git checkout %s", $this->revision);
         } else {
             $cmdline = 'git checkout';
         }
