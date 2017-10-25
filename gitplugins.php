@@ -107,7 +107,12 @@ class gitpCollection {
     public function check() {
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
-            echo $plugin->check() . "\n";
+            $alerts = $plugin->check();
+            if ($alerts) {
+                echo join("\n", $alerts) . "\n";
+            } else {
+                echo "OK.\n";
+            }
         }
     return true;
     }
@@ -128,7 +133,7 @@ class gitpCollection {
     }
 
     public function displayDiagnostic() {
-        foreach (gitpPlugin::$diagmessage as $error => $message) {
+        foreach (gitpPlugin::DIAGMESSAGE as $error => $message) {
             echo $message . " : \n";
             foreach ($this->plugins as $plugin) {
                 if ($plugin->diagnostic == $error) {
@@ -190,7 +195,7 @@ class gitpPlugin {
     const DIAG_NOT_GIT = 2;
     const DIAG_MALFORMED = 3;
 
-    public static $diagmessage = [
+    const DIAGMESSAGE = [
         self::DIAG_OK => 'OK: plugin directory exists, and is a git checkout',
         self::DIAG_NOT_EXIST => 'plugin directory DOES NOT exist',
         self::DIAG_NOT_GIT => 'plugin directory exists but IS NOT a git checkout',
@@ -239,7 +244,7 @@ class gitpPlugin {
         } else {
             $this->diagnostic = self::DIAG_NOT_EXIST;
         }
-//FIXME	$this->diagMsg = self::diagmessage[$this->diagnostic];
+        $this->diagMsg = self::DIAGMESSAGE[$this->diagnostic];
         return $this->diagnostic;
     }
 
@@ -336,29 +341,31 @@ class gitpPlugin {
      */
     public function check() {
         global $rootdir;
+        $alerts = [];
+
+        $dir = dirname($rootdir . $this->path);
+        if (!file_exists($dir) || !is_dir($dir)) {
+            $alerts[] = 'Invalid path: ' . $this->path;
+        }
 
         if (!preg_match('@^http(s?)://@', $this->repository)) {
-            return 'Invalid URL for repository: ' . $this->repository;
+            $alerts[] = sprintf('Invalid URL for repository: "%s"', $this->repository);
         }
 
         $cmdline = sprintf('git ls-remote --exit-code  %s  %s',
-                str_replace('://', '://FAKE:FAKE@', $this->repository), //fake user/pass to avoid fallback on interactive cli
-                (!empty($this->branch) ? $this->branch: '') );
+            str_replace('://', '://FAKE:FAKE@', $this->repository), //fake user/pass to avoid fallback on interactive cli
+            (!empty($this->branch) ? $this->branch: '') );
         exec($cmdline, $gitOutput, $gitReturn);
         if ($gitReturn) {
-            return 'Git repository does not exist or unreachable or branch does not exist: ' . $this->repository . ' ' . $this->branch;
+            $alerts[] = sprintf('Git repository does not exist or unreachable or branch does not exist: "%s (%s)"' ,
+                    $this->repository, $this->branch);
         }
 
         if (!empty($this->branch) && !empty($this->revision)) {
-            return 'You must declare AT MOST one branch OR one revision';
-        }
-        
-        $dir = dirname($rootdir . $this->path);
-        if (!file_exists($dir) || !is_dir($dir)) {
-            return 'Invalid path: ' . $this->path;
+            $alerts[] = 'You must declare AT MOST one branch OR one revision';
         }
 
-        return 'OK';
+        return $alerts;
     }
 
     /**
