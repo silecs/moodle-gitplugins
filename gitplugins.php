@@ -10,13 +10,13 @@ define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
 
-$plugins = require_once('gitplugins.conf');
+$config = require_once('gitplugins.conf');
 $rootdir = dirname(dirname(__DIR__));   // assuming the script is in admin/cli
 require($rootdir . '/config.php');        // global moodle config file.
 require_once($CFG->libdir . '/clilib.php');      // cli only functions
 // now get cli options
 list($options, $unrecognized) = cli_get_params(
-    ['help' => false, 'verb' => 1, 'exclude' => false,
+    ['help' => false, 'exclude' => false,
     'diag' => false, 'status' => false, 'check' => false,
     'install' => false, 'upgrade' => false, 'cleanup' => false],
     ['h' => 'help']);
@@ -37,7 +37,6 @@ Options:
 --upgrade           Upgrade all plugins already installed
 --cleanup           Remove all plugins in an inconsistent state (by RENAMING them so restoration is possible)
 --exclude           Generate a chunk of lines to insert in your .git/info/exclude file
-    --verb=N        Verbosity (0 or 1), 1 by default
 ";
 
 
@@ -48,7 +47,7 @@ if (!empty($options['help'])) {
 
 
 $pCollection = new gitpCollection();
-$pCollection->init($plugins, $options['verb']);
+$pCollection->init($config);
 $pCollection->setDiagnostic();
 
 if ($options['diag']) {
@@ -91,19 +90,25 @@ class gitpCollection {
     public $log = '';
 
     /**
-     * @param array $pluginArray directly from configuration file gitplugin.conf
-     * @return array(plugin)
+     * @param array $config raw content of configuration file (gitplugin.conf)
+     * @return boolean
      */
 
-    public function init($pluginsArray, $verb = 1) {
-        foreach ($pluginsArray as $name => $plugin) {
-            $newplugin = (new gitpPlugin())->init($name, $plugin, $verb);
+    public function init($config) {
+        $this->verbosity = $config['settings']['verbosity'];
+        $this->log = $config['settings']['log'];
+
+        foreach ($config['plugins'] as $name => $plugin) {
+            $newplugin = (new gitpPlugin())->init($name, $plugin, $this->verbosity);
             $this->plugins[] = $newplugin;
         }
         return true;
     }
 
-
+    /**
+     * check consistency of the configuration data
+     * @return boolean
+     */
     public function check() {
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
@@ -209,9 +214,9 @@ class gitpPlugin {
     public $revision = null;    // optional ; precise git revision (hash or tag)
     public $diagnostic;
     public $diagMsg = '';
-    public $verb;  //verbosity
+    public $verbosity;
 
-    public function init($name, $pluginconf, $verb) {
+    public function init($name, $pluginconf, $verbosity) {
         $newplugin = new gitpPlugin();
         // mandatory attributes:
         $newplugin->name = $name;
@@ -222,7 +227,7 @@ class gitpPlugin {
         $newplugin->branch = (isset($pluginconf['gitbranch']) ? $pluginconf['gitbranch'] : null);
         $newplugin->revision = (isset($pluginconf['gitrevision']) ? $pluginconf['gitrevision'] : null);
         // other init
-        $newplugin->verb = $verb;
+        $newplugin->verbosity = $verbosity;
         return $newplugin;
     }
 
@@ -389,10 +394,10 @@ class gitpPlugin {
      * display the output on the terminal in an easily readable way (draft)
      * @param string $cmdline "input" command line
      * @param array $lines output lines
-     * @param boolean $always : display whatever this->verb
+     * @param boolean $always : display whatever this->verbosity
      */
     private function output($cmdline, $lines, $always = false) {
-        if ($always || $this->verb > 0) {
+        if ($always || $this->verbosity > 0) {
             echo "  < " . $cmdline . "\n";
             foreach ($lines as $line) {
                 echo "    > " . $line . "\n";

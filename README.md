@@ -7,8 +7,8 @@ You need to install only 2 files in the /admin/cli directory:
 - the `gitplugins.php` script
 - the `gitplugins.conf` file ; you can use `gitplugins.conf.dist` as a basis
 
-The `gitplugins.conf` file is a list of all the plugins you want to manage
-(install, upgrade...) with the format:
+The `gitplugins.conf` file has two sections : a short list of settings, and
+a list of all the plugins you want to manage (install, upgrade...) following the format:
 ```
     'local/mailtest' => [
         'path' => '/local/mailtest', // mandatory ; path from the moodle root
@@ -17,6 +17,8 @@ The `gitplugins.conf` file is a list of all the plugins you want to manage
         'gitrevision' => '', // optional ; precise git revision (hash or tag)  (incompatible with gitbranch)
     ],
 ```
+
+You have to adjust the settings (verbosity level) and to fill the information on the wanted plugins.
 
 You can then launch `php gitplugins.php` with one of the options:
 
