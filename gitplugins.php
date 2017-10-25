@@ -10,15 +10,22 @@ define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
 
-$config = require_once('gitplugins.conf');
 $rootdir = dirname(dirname(__DIR__));   // assuming the script is in admin/cli
 require($rootdir . '/config.php');        // global moodle config file.
 require_once($CFG->libdir . '/clilib.php');      // cli only functions
 // now get cli options
 list($options, $unrecognized) = cli_get_params(
-    ['help' => false, 'exclude' => false,
-    'diag' => false, 'status' => false, 'check' => false,
-    'install' => false, 'upgrade' => false, 'cleanup' => false],
+    [
+        'help' => false,
+        'exclude' => false,
+        'diag' => false,
+        'status' => false,
+        'check' => false,
+        'install' => false,
+        'upgrade' => false,
+        'cleanup' => false,
+        'config' => false,
+    ],
     ['h' => 'help']);
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
@@ -28,9 +35,10 @@ if ($unrecognized) {
 $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 
 Options:
--h, --help            Print out this help
+-h, --help          Print out this help
+--config <file>       Read this configuration file instead of gitplugins.conf
 
---check             Check the consistency of 'gitplugins.conf'
+--check             Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
 --status            Git status on each declared plugin
 --install           Install all plugins that are not already present
@@ -39,12 +47,16 @@ Options:
 --exclude           Generate a chunk of lines to insert in your .git/info/exclude file
 ";
 
-
 if (!empty($options['help'])) {
     echo $help;
     return 0;
 }
 
+if (empty($options['config'])) {
+    $config = require_once('gitplugins.conf');
+} else {
+    $config = require_once($options['config']);
+}
 
 $pCollection = new gitpCollection();
 $pCollection->init($config);
