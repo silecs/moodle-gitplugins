@@ -97,17 +97,7 @@ class gitpCollection {
 
     public function init($pluginsArray, $verb = 1) {
         foreach ($pluginsArray as $name => $plugin) {
-            $newplugin = new gitpPlugin();
-            // mandatory attributes:
-            $newplugin->name = $name;
-            $newplugin->path = $plugin['path'];
-            $newplugin->repository = $plugin['gitrepository'];
-            // optional attributes:
-            $newplugin->plugin = (isset($plugin['plugin']) ? $plugin['plugin'] : null);
-            $newplugin->branch = (isset($plugin['gitbranch']) ? $plugin['gitbranch'] : null);
-            $newplugin->revision = (isset($plugin['gitrevision']) ? $plugin['gitrevision'] : null);
-            // other init
-            $newplugin->verb = $verb;
+            $newplugin = (new gitpPlugin())->init($name, $plugin, $verb);
             $this->plugins[] = $newplugin;
         }
         return true;
@@ -215,6 +205,21 @@ class gitpPlugin {
     public $diagnostic;
     public $diagMsg = '';
     public $verb;  //verbosity
+
+    public function init($name, $pluginconf, $verb) {
+        $newplugin = new gitpPlugin();
+        // mandatory attributes:
+        $newplugin->name = $name;
+        $newplugin->path = $pluginconf['path'];
+        $newplugin->repository = $pluginconf['gitrepository'];
+        // optional attributes:
+        $newplugin->plugin = (isset($pluginconf['plugin']) ? $pluginconf['plugin'] : null);
+        $newplugin->branch = (isset($pluginconf['gitbranch']) ? $pluginconf['gitbranch'] : null);
+        $newplugin->revision = (isset($pluginconf['gitrevision']) ? $pluginconf['gitrevision'] : null);
+        // other init
+        $newplugin->verb = $verb;
+        return $newplugin;
+    }
 
     public function setDiagnostic() {
         global $rootdir;
