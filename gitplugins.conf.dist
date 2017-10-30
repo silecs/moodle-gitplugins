@@ -2,7 +2,7 @@
 return([
     'settings' => [
         'verbosity' => 1,  // 0 or 1
-        'log' => false,    // not implemented yet
+        'log' => false,    // FALSE, TRUE or an absolute path for the logfile
     ],
     'plugins' => [
         'PLUGIN/NAME' => [  // a label or identifier for the plugin
