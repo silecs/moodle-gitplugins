@@ -29,5 +29,5 @@ You can then launch `php gitplugins.php` with one of the options:
 * `--upgrade` upgrades all plugins already installed (`git fetch` + `git checkout`)
 * `--cleanup` "removes" all plugins in an inconsistent state (by **renaming** them, so restoration is possible)
 
-"Cleaned" repositories are renamed to `<orig-name>.back-<timestam>`, so you can
+"Cleaned" repositories are renamed to `<orig-name>.back-<timestamp>`, so you can
 easily find and restore them if needed.
