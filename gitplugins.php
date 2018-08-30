@@ -2,9 +2,9 @@
 
 /**
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
- * @copyright 2017 Silecs {@link http://www.silecs.info/societe}
+ * @copyright 2017-2018 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.2 : 2017102501
+ * @version   1.2.1 : 2018083000
  */
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
@@ -368,8 +368,8 @@ class gitpPlugin {
             exec($cmdline, $gitOutput, $gitReturn);
             $this->output($cmdline, $gitOutput, false, $logfile);
             $cmdline = "git rebase";
-            exec($cmdline, $gitOutput, $gitReturn, false, $logfile);
-            $this->output($cmdline, $gitOutput);
+            exec($cmdline, $gitOutput, $gitReturn);
+            $this->output($cmdline, $gitOutput, false, $logfile);
             return $gitReturn;
         } else {
             $cmdline = "git rebase";
