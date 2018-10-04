@@ -60,8 +60,7 @@ if (empty($options['config'])) {
     $config = require_once($options['config']);
 }
 
-$pCollection = new gitpCollection();
-$pCollection->init($config, $options['ascii']);
+$pCollection = new gitpCollection($config, $options['ascii']);
 $pCollection->setDiagnostic();
 
 if ($options['diag']) {
@@ -107,10 +106,10 @@ class gitpCollection {
 
     /**
      * @param array $config raw content of configuration file (gitplugin.conf)
+     * @param integer $ascii
      * @return boolean
      */
-
-    public function init($config, $ascii=0) {
+    public function __construct($config, $ascii=0) {
         global $rootdir;
         $settings = $config['settings'];
         $this->verbosity = isset($settings['verbosity']) ? $settings['verbosity'] : 0;
