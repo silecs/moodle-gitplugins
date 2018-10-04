@@ -4,7 +4,7 @@
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
  * @copyright 2017-2018 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.2.1 : 2018083000
+ * @version   1.2.3 : 2018100401
  */
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
@@ -20,11 +20,12 @@ list($options, $unrecognized) = cli_get_params(
         'exclude' => false,
         'diag' => false,
         'status' => false,
-        'check' => false,
+        'checkconfig' => false,
         'install' => false,
         'upgrade' => false,
         'cleanup' => false,
         'config' => false,
+        'ascii' => false,
     ],
     ['h' => 'help']);
 if ($unrecognized) {
@@ -36,9 +37,10 @@ $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 
 Options:
 -h, --help          Print out this help
---config <file>       Read this configuration file instead of gitplugins.conf
+--config <file>     Read this configuration file instead of gitplugins.conf
+--ascii             No formatting sequences (compatibility with exotic terminals)
 
---check             Check the consistency of the configuration file
+--checkconfig       Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
 --status            Git status on each declared plugin
 --install           Install all plugins that are not already present
@@ -59,15 +61,15 @@ if (empty($options['config'])) {
 }
 
 $pCollection = new gitpCollection();
-$pCollection->init($config);
+$pCollection->init($config, $options['ascii']);
 $pCollection->setDiagnostic();
 
 if ($options['diag']) {
     return $pCollection->displayDiagnostic();
 }
 
-if ($options['check']) {
-    return $pCollection->check();
+if ($options['checkconfig']) {
+    return $pCollection->checkconfig();
 }
 
 if ($options['status']) {
@@ -101,16 +103,18 @@ class gitpCollection {
     public $verbosity;
     public $log = false;
     public $logfile = '';
+    public $ascii = false;
 
     /**
      * @param array $config raw content of configuration file (gitplugin.conf)
      * @return boolean
      */
 
-    public function init($config) {
+    public function init($config, $ascii=0) {
         global $rootdir;
         $settings = $config['settings'];
         $this->verbosity = isset($settings['verbosity']) ? $settings['verbosity'] : 0;
+        $this->ascii = $ascii;
         if (isset($settings['log'])) {
             if ($settings['log'] === true) {
                 $this->logfile = $rootdir . "/admin/cli/gitplugins.log";
@@ -131,13 +135,13 @@ class gitpCollection {
     }
 
     /**
-     * check consistency of the configuration data
+     * check consistency of the configuration file
      * @return boolean
      */
-    public function check() {
+    public function checkconfig() {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
-            $alerts = $plugin->check();
+            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
+            $alerts = $plugin->checkconfig();
             if ($alerts) {
                 echo join("\n", $alerts) . "\n";
             } else {
@@ -150,7 +154,7 @@ class gitpCollection {
     public function status() {
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
+            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             echo $plugin->status() . "\n";
         }
         return true;
@@ -179,7 +183,7 @@ class gitpCollection {
     public function install() {
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
+            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             if ($this->log) {
                 file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $plugin->name), FILE_APPEND);
             }
@@ -191,7 +195,7 @@ class gitpCollection {
     public function upgrade() {
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
+            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             if ($this->log) {
                 file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $plugin->name), FILE_APPEND);
             }
@@ -202,7 +206,7 @@ class gitpCollection {
 
     public function cleanup() {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold') . "...\n";
+            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             echo $plugin->cleanup() . "\n";
         }
         return true;
@@ -380,10 +384,10 @@ class gitpPlugin {
     }
 
     /**
-     * check the plugin configuration data
+     * check the plugin configuration file
      * @return string  diagnostic message 
      */
-    public function check() {
+    public function checkconfig() {
         global $rootdir;
         $alerts = [];
 
@@ -456,9 +460,10 @@ class gitpPlugin {
 /**
  * @param string $text
  * @param string $style (one of the $escape keys)
+ * @param bool $ascii : true => no escape sequence
  * @return string
  */
-function gitpTerm($text, $style) {
+function gitpTerm($text, $style, $ascii) {
     $escape = [
         'bold' => ['start' => "\e[1m", 'stop' => "\e[21m"],
         'dim' => ['start' => "\e[2m", 'stop' => "\e[22m"],
@@ -468,5 +473,5 @@ function gitpTerm($text, $style) {
         'hidden' => ['start' => "\e[8m", 'stop' => "\e[28m"],
     ];
     $fstyle = $escape[$style];
-    return $fstyle['start'] . $text . $fstyle['stop'];
+    return ($ascii ? $text : $fstyle['start'] . $text . $fstyle['stop']);
 }
