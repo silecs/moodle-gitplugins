@@ -3,9 +3,7 @@
 This Moodle tool is a simple cli script to help deploying Moodle plugins via Git,
 but without using submodules.
 
-You need to install only 2 files in the /admin/cli directory:
-- the `gitplugins.php` script
-- the `gitplugins.conf` file ; you can use `gitplugins.conf.dist` as a basis
+You need to install one single file in the /admin/cli directory, the `gitplugins.php` script.
 
 The `gitplugins.conf` file has two sections : a short list of settings, and
 a list of all the plugins you want to manage (install, upgrade...) following the format:
@@ -22,12 +20,14 @@ You have to adjust the settings (verbosity level) and to fill the information on
 
 You can then launch `php gitplugins.php` with one of the options:
 
+* `--gen-config` generates a sample gitplugins.conf file
 * `--check` checks the consistency of 'gitplugins.conf'
 * `--diag` displays a diagnostic of all declared plugins
 * `--status` launches a `git status` on each declared plugin
 * `--install` installs all plugins that are not already present (`git clone`)
 * `--upgrade` upgrades all plugins already installed (`git fetch` + `git checkout`)
 * `--cleanup` "removes" all plugins in an inconsistent state (by **renaming** them, so restoration is possible)
+* `--gen-exclude` generates a chunk of lines to insert in your .git/info/exclude file
 
 "Cleaned" repositories are renamed to `<orig-name>.back-<timestamp>`, so you can
 easily find and restore them if needed.
