@@ -2,9 +2,9 @@
 
 /**
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
- * @copyright 2017-2018 Silecs {@link http://www.silecs.info/societe}
+ * @copyright 2017-2019 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.3.0 : 20190619
+ * @version   1.4.0 : 2019-10-15
  */
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
@@ -22,8 +22,10 @@ list($options, $unrecognized) = cli_get_params(
         'diag' => false,
         'status' => false,
         'checkconfig' => false,
-        'install' => false,
-        'upgrade' => false,
+        'install-all' => false,
+        'install' => '',
+        'upgrade-all' => false,
+        'upgrade' => '',
         'cleanup' => false,
         'config' => false,
         'ascii' => false,
@@ -38,15 +40,17 @@ $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 
 Options:
 -h, --help          Print out this help
---config <file>     Read this configuration file instead of gitplugins.conf
+--config=<file>     Read this configuration file instead of gitplugins.conf
 --ascii             No formatting sequences (compatibility with exotic terminals)
 
 --gen-config        Generate a sample gitplugins.conf file
 --checkconfig       Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
 --status            Git status on each declared plugin
---install           Install all plugins that are not already present
---upgrade           Upgrade all plugins already installed
+--install-all       Install all plugins that are not already present
+--install=<name>    Install this plugin according to gitplugins.conf
+--upgrade-all       Upgrade all plugins already installed
+--upgrade=<name>    Upgrade this plugin according to gitplugins.conf
 --cleanup           Remove all plugins in an inconsistent state (by RENAMING them so restoration is possible)
 --gen-exclude       Generate a chunk of lines to insert in your .git/info/exclude file
 ";
@@ -81,13 +85,28 @@ if ($options['status']) {
     return $pCollection->status();
 }
 
+if ($options['install-all']) {
+    return $pCollection->install_all();
+}
+
 if ($options['install']) {
-    return $pCollection->install();
+    if (! isset($options['install'])) {
+        die ('--install <plugin_name> ; you can use --diag to list the plugins, otherwise try --install-all');
+    }
+    return $pCollection->install($options['install']);
+}
+
+if ($options['upgrade-all']) {
+    return $pCollection->upgrade_all();
 }
 
 if ($options['upgrade']) {
-    return $pCollection->upgrade();
+    if (! isset($options['upgrade'])) {
+        die ('--upgrade <plugin_name> ; you can use --diag to list the plugins, otherwise try --upgrade-all');
+    }
+    return $pCollection->upgrade($options['upgrade']);
 }
+
 
 if ($options['cleanup']) {
     return $pCollection->cleanup();
@@ -212,7 +231,7 @@ EOT;
     }
 
 
-    public function install() {
+    public function install_all() {
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
@@ -224,7 +243,19 @@ EOT;
         return true;
     }
 
-    public function upgrade() {
+    public function install($pluginname) {
+        putenv("LANGUAGE=C");
+        $myplugin = $this->find_plugin($pluginname);
+        echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
+        if ($this->log) {
+            file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
+        }
+        echo $myplugin->install($this->logfile) . "\n";
+        return true;
+    }
+
+
+    public function upgrade_all() {
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
@@ -235,6 +266,18 @@ EOT;
         }
         return true;
     }
+
+    public function upgrade($pluginname) {
+        putenv("LANGUAGE=C");
+        $myplugin = $this->find_plugin($pluginname);
+        echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
+        if ($this->log) {
+            file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
+        }
+        echo $myplugin->upgrade($this->logfile) . "\n";
+        return true;
+    }
+
 
     public function cleanup() {
         foreach ($this->plugins as $plugin) {
@@ -267,6 +310,17 @@ EOT;
         } else {
             file_put_contents(self::$configfile, self::$configsample);
         }
+    }
+
+    private function find_plugin($pluginname) {
+        putenv("LANGUAGE=C");
+        foreach ($this->plugins as $plugin) {
+            if ($plugin->name == $pluginname) {
+                return $plugin;
+            }
+        }
+        die ($pluginname . " not listed in gitplugins.conf. You can use --diag\n\n");
+        return false;
     }
 
 }
