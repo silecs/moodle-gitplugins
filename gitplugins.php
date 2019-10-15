@@ -235,9 +235,7 @@ EOT;
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
-            if ($this->log) {
-                file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $plugin->name), FILE_APPEND);
-            }
+            $this->log_to_file($plugin->name);
             echo $plugin->install() . "\n";
         }
         return true;
@@ -247,9 +245,7 @@ EOT;
         putenv("LANGUAGE=C");
         $myplugin = $this->find_plugin($pluginname);
         echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
-        if ($this->log) {
-            file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
-        }
+        $this->log_to_file($pluginname);
         echo $myplugin->install() . "\n";
         return true;
     }
@@ -259,9 +255,7 @@ EOT;
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
-            if ($this->log) {
-                file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $plugin->name), FILE_APPEND);
-            }
+            $this->log_to_file($plugin->name);
             echo $plugin->upgrade() . "\n";
         }
         return true;
@@ -271,9 +265,7 @@ EOT;
         putenv("LANGUAGE=C");
         $myplugin = $this->find_plugin($pluginname);
         echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
-        if ($this->log) {
-            file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
-        }
+        $this->log_to_file($pluginname);
         echo $myplugin->upgrade() . "\n";
         return true;
     }
@@ -321,6 +313,12 @@ EOT;
         }
         die ($pluginname . " not listed in gitplugins.conf. You can use --diag\n\n");
         return false;
+    }
+
+    private function log_to_file($pluginname) {
+        if ($this->log) {
+            file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
+        }
     }
 
 }
