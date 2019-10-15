@@ -179,7 +179,7 @@ EOT;
         $this->log = $config['settings']['log'];
 
         foreach ($config['plugins'] as $name => $plugin) {
-            $newplugin = (new gitpPlugin())->init($name, $plugin, $this->verbosity);
+            $newplugin = (new gitpPlugin())->init($name, $plugin, $this->verbosity, $this->logfile);
             $this->plugins[] = $newplugin;
         }
         return true;
@@ -238,7 +238,7 @@ EOT;
             if ($this->log) {
                 file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $plugin->name), FILE_APPEND);
             }
-            echo $plugin->install($this->logfile) . "\n";
+            echo $plugin->install() . "\n";
         }
         return true;
     }
@@ -250,7 +250,7 @@ EOT;
         if ($this->log) {
             file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
         }
-        echo $myplugin->install($this->logfile) . "\n";
+        echo $myplugin->install() . "\n";
         return true;
     }
 
@@ -262,7 +262,7 @@ EOT;
             if ($this->log) {
                 file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $plugin->name), FILE_APPEND);
             }
-            echo $plugin->upgrade($this->logfile) . "\n";
+            echo $plugin->upgrade() . "\n";
         }
         return true;
     }
@@ -274,7 +274,7 @@ EOT;
         if ($this->log) {
             file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
         }
-        echo $myplugin->upgrade($this->logfile) . "\n";
+        echo $myplugin->upgrade() . "\n";
         return true;
     }
 
@@ -348,8 +348,9 @@ class gitpPlugin {
     public $diagnostic;
     public $diagMsg = '';
     public $verbosity;
+    public $logfile;
 
-    public function init($name, $pluginconf, $verbosity) {
+    public function init($name, $pluginconf, $verbosity, $logfile) {
         $newplugin = new gitpPlugin();
         // mandatory attributes:
         $newplugin->name = $name;
@@ -361,6 +362,7 @@ class gitpPlugin {
         $newplugin->revision = (isset($pluginconf['gitrevision']) ? $pluginconf['gitrevision'] : null);
         // other init
         $newplugin->verbosity = $verbosity;
+        $newplugin->logfile = $logfile;
         return $newplugin;
     }
 
@@ -407,7 +409,7 @@ class gitpPlugin {
      * install the target plugins with "git clone"
      * @param string $logfile (or false)
      */
-    public function install($logfile) {
+    public function install() {
         global $rootdir;
         if ($this->diagnostic != self::DIAG_NOT_EXIST) {
             printf("Warning ! Unable to install plugin %s ; already exists in %s.\n", $this->name, $this->path);
@@ -426,7 +428,7 @@ class gitpPlugin {
                 $rootdir . $this->path
         );
         exec($cmdline, $gitOutput, $gitReturn);
-        $this->output($cmdline, $gitOutput, false, $logfile);
+        $this->output($cmdline, $gitOutput, false, $this->logfile);
         return $gitReturn;
     }
 
@@ -434,7 +436,7 @@ class gitpPlugin {
      * upgrade the target plugins with git checkout / git rebase
      * @param string $logfile (or false)
      */
-    public function upgrade($logfile) {
+    public function upgrade() {
         global $rootdir;
         if ($this->diagnostic != self::DIAG_OK) {
             printf("Warning, unable to update %s ! %s  %s.\n", $this->name, $this->path, $this->diagMsg);
@@ -456,23 +458,23 @@ class gitpPlugin {
         if (!empty($this->branch)) {
             $cmdline = sprintf("git checkout %s", $this->branch);
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $logfile);
+            $this->output($cmdline, $gitOutput, false, $this->logfile);
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $logfile);
+            $this->output($cmdline, $gitOutput, false, $this->logfile);
             return $gitReturn;
         } elseif (!empty($this->revision)) {
             $cmdline = sprintf("git checkout %s", $this->revision);
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $logfile);
+            $this->output($cmdline, $gitOutput, false, $this->logfile);
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $logfile);
+            $this->output($cmdline, $gitOutput, false, $this->logfile);
             return $gitReturn;
         } else {
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $logfile);
+            $this->output($cmdline, $gitOutput, false, $this->logfile);
             return $gitReturn;
         }
     }
