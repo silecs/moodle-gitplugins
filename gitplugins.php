@@ -522,16 +522,18 @@ class gitpPlugin {
      * @param integer $timestamp
      * @return string diagnostic message
      */
-    public function cleanup($timestamp) {
+    public function cleanup() {
         global $rootdir;
 
         if ($this->diagnostic != self::DIAG_NOT_GIT) {
             return '  unchanged';
         }
 
+        $timestamp = time();
         $dir = $rootdir . $this->path;
-        $res = rename($dir, $dir . ".back-$timestamp");
-        return '  renamed to ' . $dir . ".back-$timestamp : $res";
+        $to = $dir . ".gpcleanup-$timestamp";
+        $res = rename($dir, $to);
+        return "  renamed to $to : $res";
     }
 
     /**
