@@ -23,6 +23,7 @@ You can then launch `php gitplugins.php` with one of the options:
 * `--gen-config` generates a sample gitplugins.conf file
 * `--check` checks the consistency of 'gitplugins.conf'
 * `--diag` displays a diagnostic of all declared plugins
+* `--list` lists all declared plugins, without diagnostic
 * `--status` launches a `git status` on each declared plugin
 * `--install-all` installs all plugins that are not already present
 * `--install=<name>` installs this plugin according to gitplugins.conf

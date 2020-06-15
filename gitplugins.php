@@ -20,6 +20,7 @@ list($options, $unrecognized) = cli_get_params(
         'gen-exclude' => false,
         'gen-config' => false,
         'diag' => false,
+        'list' => false,
         'status' => false,
         'checkconfig' => false,
         'install-all' => false,
@@ -45,6 +46,7 @@ Options:
 --gen-config        Generate a sample gitplugins.conf file
 --checkconfig       Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
+--list              List all declared plugins (without diagnostic)
 --status            Git status on each declared plugin
 --install-all       Install all plugins that are not already present
 --install=<name>    Install this plugin according to gitplugins.conf
@@ -70,6 +72,10 @@ if ($options['gen-config']) {
 
 if ($options['diag']) {
     return $pCollection->displayDiagnostic();
+}
+
+if ($options['list']) {
+    return $pCollection->list();
 }
 
 if ($options['checkconfig']) {
@@ -225,6 +231,14 @@ EOT;
         }
     }
 
+    public function list() {
+        $i = 0;
+        foreach ($this->plugins as $plugin) {
+            $i++;
+            printf("%3d. %-25s %-40s %-10s %-10s\n", $i, $plugin->name, $plugin->path, 
+                 $plugin->revision, $plugin->branch);
+        }
+    }
 
     public function install_all() {
         putenv("LANGUAGE=C");
@@ -335,7 +349,6 @@ class gitpPlugin {
     public $name;           // mandatory ; local name for the plugin, with slash separators eg. 'block/course_contents'
     public $repository;     // mandatory
     public $path;           // mandatory ; path from the moodle root
-    public $plugin;         // optional ; as declared in plugin's version.php
     public $branch = null;  // optional
     public $revision = null;    // optional ; precise git revision (hash or tag)
     public $diagnostic;
@@ -350,7 +363,6 @@ class gitpPlugin {
         $newplugin->path = $pluginconf['path'];
         $newplugin->repository = $pluginconf['gitrepository'];
         // optional attributes:
-        $newplugin->plugin = (isset($pluginconf['plugin']) ? $pluginconf['plugin'] : null);
         $newplugin->branch = (isset($pluginconf['gitbranch']) ? $pluginconf['gitbranch'] : null);
         $newplugin->revision = (isset($pluginconf['gitrevision']) ? $pluginconf['gitrevision'] : null);
         // other init
