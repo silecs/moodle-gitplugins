@@ -12,8 +12,7 @@ define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
 
 $rootdir = dirname(dirname(__DIR__));   // assuming the script is in admin/cli
-require($rootdir . '/config.php');        // global moodle config file.
-require_once($CFG->libdir . '/clilib.php');      // cli only functions
+require_once($rootdir.'/lib/clilib.php');      // cli only functions
 // now get cli options
 list($options, $unrecognized) = cli_get_params(
     [
@@ -28,7 +27,6 @@ list($options, $unrecognized) = cli_get_params(
         'upgrade-all' => false,
         'upgrade' => '',
         'cleanup' => false,
-        'config' => false,
         'ascii' => false,
     ],
     ['h' => 'help']);
@@ -61,18 +59,14 @@ if (!empty($options['help'])) {
     return 0;
 }
 
+$config = require_once('gitplugins.conf');
+$pCollection = new gitpCollection($config, $options['ascii']);
+$pCollection->setDiagnostic();
+
+
 if ($options['gen-config']) {
     return gitpCollection::generateConfig();
 }
-
-if (empty($options['config'])) {
-    $config = require_once('gitplugins.conf');
-} else {
-    $config = require_once($options['config']);
-}
-
-$pCollection = new gitpCollection($config, $options['ascii']);
-$pCollection->setDiagnostic();
 
 if ($options['diag']) {
     return $pCollection->displayDiagnostic();
