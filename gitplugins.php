@@ -3,9 +3,9 @@
 
 /**
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
- * @copyright 2017-2019 Silecs {@link http://www.silecs.info/societe}
+ * @copyright 2017-2020 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.4.0 : 2019-10-15
+ * @version   1.5.0 : 2020-06-16
  */
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
