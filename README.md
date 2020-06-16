@@ -1,9 +1,13 @@
 # gitplugins - A cli administration tool to help deploying Moodle plugins via Git
 
+## Overview
+
 This Moodle tool is a simple cli script to help deploying Moodle plugins via Git,
 but without using submodules.
 
 You need to install one single file in the /admin/cli directory, the `gitplugins.php` script.
+
+## gitplugins.conf
 
 The `gitplugins.conf` file has two sections : a short list of settings, and
 a list of all the plugins you want to manage (install, upgrade...) following the format:
@@ -17,6 +21,8 @@ a list of all the plugins you want to manage (install, upgrade...) following the
 ```
 
 You have to adjust the settings (verbosity level) and to fill the information on the wanted plugins.
+
+## Execution
 
 You can then launch `php gitplugins.php` with one of the options:
 
@@ -34,3 +40,13 @@ You can then launch `php gitplugins.php` with one of the options:
 
 "Cleaned" repositories are renamed to `<orig-name>.back-<timestamp>`, so you can
 easily find and restore them if needed.
+
+## Installation 
+
+The simplest way to install `gitplugins` is to download directly, with `wget` (or `curl`) :
+
+``` 
+wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
+```
+
+Alternatively, you can easily copy-paste the entire code in a new file.
