@@ -38,7 +38,7 @@ You can then launch `php gitplugins.php` with one of the options:
 * `--cleanup` "removes" all plugins in an inconsistent state (by **renaming** them, so restoration is possible)
 * `--gen-exclude` generates a chunk of lines to insert in your .git/info/exclude file
 
-"Cleaned" repositories are renamed to `<orig-name>.back-<timestamp>`, so you can
+"Cleaned" repositories are renamed to `<orig-name>.gpcleanup-<timestamp>`, so you can
 easily find and restore them if needed.
 
 ## Installation 
