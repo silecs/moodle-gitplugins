@@ -1,12 +1,14 @@
 #!/usr/bin/env php
 <?php
-
 /**
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
  * @copyright 2017-2020 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.5.0 : 2020-06-16
+ * @version   1.5.1 : 2020-06-30
+ * @link      https://github.com/silecs/moodle-gitplugins
+ * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
+
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
