@@ -4,7 +4,7 @@
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
  * @copyright 2017-2020 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.5.1 : 2020-06-30
+ * @version   1.5.2 : 2020-10-13
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
@@ -23,7 +23,7 @@ list($options, $unrecognized) = cli_get_params(
         'gen-config' => false,
         'diag' => false,
         'list' => false,
-        'status' => false,
+        'status-all' => false,
         'checkconfig' => false,
         'install-all' => false,
         'install' => '',
@@ -49,7 +49,7 @@ Options:
 --checkconfig       Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
 --list              List all declared plugins (without diagnostic)
---status            Git status on each declared plugin
+--status-all        Git status on each declared plugin
 --install-all       Install all plugins that are not already present
 --install=<name>    Install this plugin according to gitplugins.conf
 --upgrade-all       Upgrade all plugins already installed
@@ -84,8 +84,8 @@ if ($options['checkconfig']) {
     return $pCollection->checkconfig();
 }
 
-if ($options['status']) {
-    return $pCollection->status();
+if ($options['status-all']) {
+    return $pCollection->status_all();
 }
 
 if ($options['install-all']) {
@@ -205,12 +205,21 @@ EOT;
         return true;
     }
 
-    public function status() {
+    public function status_all() {
+        $summary = [];
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
-            echo $plugin->status() . "\n";
+            echo "\n" . gitpTerm($plugin->name, 'invert', $this->ascii) . "...\n";
+            $index = (int)($plugin->status() > 0); // 0 or 1
+            $summary[$index][] = $plugin->name;
         }
+        if (isset($summary[0])) {
+            echo "\n\n" . gitpTerm('Status OK :', 'invert', $this->ascii) . join(' ', $summary[0]);
+        }
+        if (isset($summary[1])) {
+        echo "\n\n" . gitpTerm('Status errors :', 'invert', $this->ascii) . join(' ', $summary[1]);
+        }
+        echo "\n\n";
         return true;
     }
 
@@ -578,5 +587,9 @@ function gitpTerm($text, $style, $ascii) {
         'hidden' => ['start' => "\e[8m", 'stop' => "\e[28m"],
     ];
     $fstyle = $escape[$style];
-    return ($ascii ? $text : $fstyle['start'] . $text . $fstyle['stop']);
+
+    if ($ascii) {
+        return $text;
+    } 
+    return $fstyle['start'] . $text . $fstyle['stop'];
 }
