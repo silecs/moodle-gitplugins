@@ -4,7 +4,7 @@
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
  * @copyright 2017-2020 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.5.2 : 2020-10-13
+ * @version   1.5.3 : 2020-12-04
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
@@ -210,7 +210,11 @@ EOT;
         putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'invert', $this->ascii) . "...\n";
-            $index = (int)($plugin->status() > 0); // 0 or 1
+            list($diag, $status_short) = $plugin->status();
+            $index = (int)($diag > 0); // 0 or 1
+            if ($status_short) {
+                $summary_short[$plugin->name] = $status_short;
+            }
             $summary[$index][] = $plugin->name;
         }
         if (isset($summary[0])) {
@@ -220,6 +224,15 @@ EOT;
         echo "\n\n" . gitpTerm('Status errors :', 'invert', $this->ascii) . join(' ', $summary[1]);
         }
         echo "\n\n";
+        if ($summary_short) {
+            echo "According to git status, there are local modification:\n";
+            foreach ($summary_short as $plugin => $count) {
+                $output = implode(', ', array_map(
+                    function ($v, $k) { return sprintf("%s=%d", $k, $v); },
+                    $count, array_keys($count)));
+                echo "$plugin : $output\n";
+            }
+        }
         return true;
     }
 
@@ -410,6 +423,7 @@ class gitpPlugin {
     public function status() {
         global $rootdir;
 
+        $countStatus = [];
         $cd = chdir($rootdir . $this->path);
         if (!$cd) {
             printf("ERROR ! Unable to access %s\n", $this->path);
@@ -417,8 +431,12 @@ class gitpPlugin {
         }
 
         exec('git status', $gitOutput, $gitReturn);
-        $this->output('git status', $gitOutput, true);
-        return $gitReturn;
+        exec('git status --short | cut -c1-2', $statusShort, $trash);
+        foreach ($statusShort as $flag) {
+            $countStatus[$flag] = isset($countStatus[$flag]) ? $countStatus[$flag]+1 : 1;
+        }
+        $this->output('git status', $gitOutput, false);
+        return [$gitReturn, $countStatus];
     }
 
     /**
