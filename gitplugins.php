@@ -529,7 +529,8 @@ class gitpPlugin {
             $alerts[] = 'Invalid path: ' . $this->path;
         }
 
-        if (!preg_match('@^http(s?)://@', $this->repository)) {
+        if (!preg_match('@^http(s?)://@', $this->repository) 
+            && !preg_match('&.*@.*:&', $this->repository)) { // accept git@github.com:/path/to/repo
             $alerts[] = sprintf('Invalid URL for repository: "%s"', $this->repository);
         }
 
