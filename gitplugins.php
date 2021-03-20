@@ -2,9 +2,10 @@
 <?php
 /**
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
- * @copyright 2017-2020 Silecs {@link http://www.silecs.info/societe}
+ *
+ * @copyright 2017-2021 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.5.3 : 2020-12-04
+ * @version   1.5.4 : 2021-03-20
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
@@ -63,14 +64,16 @@ if (!empty($options['help'])) {
     return 0;
 }
 
+if ($options['gen-config']) {
+    printf("Writing %s ; to be completed.\n\n", gitpCollection::$configfile);
+    return gitpCollection::generateConfig();
+}
+
 $config = require_once('gitplugins.conf');
 $pCollection = new gitpCollection($config, $options['ascii']);
 $pCollection->setDiagnostic();
 
 
-if ($options['gen-config']) {
-    return gitpCollection::generateConfig();
-}
 
 if ($options['diag']) {
     return $pCollection->displayDiagnostic();
