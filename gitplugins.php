@@ -3,12 +3,15 @@
 /**
  * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
  *
- * @copyright 2017-2021 Silecs {@link http://www.silecs.info/societe}
+ * @copyright 2017-2024 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.5.4 : 2021-03-20
+ * @version   1.5.5 : 2024-04-03
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
+if (php_sapi_name() !== 'cli') {
+    die ('CLI mode only');
+}
 
 define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
