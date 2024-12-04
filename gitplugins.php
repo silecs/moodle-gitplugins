@@ -27,6 +27,7 @@ list($options, $unrecognized) = cli_get_params(
         'gen-config' => false,
         'diag' => false,
         'list' => false,
+        'detail' => '',
         'status-all' => false,
         'checkconfig' => false,
         'install-all' => false,
@@ -53,6 +54,7 @@ Options:
 --checkconfig       Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
 --list              List all declared plugins (without diagnostic)
+--detail=<name>     Display details about one plugin
 --status-all        Git status on each declared plugin
 --install-all       Install all plugins that are not already present
 --install=<name>    Install this plugin according to gitplugins.conf
@@ -86,6 +88,13 @@ if ($options['list']) {
     return $pCollection->list();
 }
 
+if ($options['detail']) {
+    if (! isset($options['detail'])) {
+        die ('--detail=<plugin_name>');
+    }
+    return $pCollection->detail($options['detail']);
+}
+
 if ($options['checkconfig']) {
     return $pCollection->checkconfig();
 }
@@ -100,7 +109,7 @@ if ($options['install-all']) {
 
 if ($options['install']) {
     if (! isset($options['install'])) {
-        die ('--install <plugin_name> ; you can use --diag to list the plugins, otherwise try --install-all');
+        die ('--install=<plugin_name> ; you can use --list or --diag to list the plugins, otherwise try --install-all');
     }
     return $pCollection->install($options['install']);
 }
@@ -111,7 +120,7 @@ if ($options['upgrade-all']) {
 
 if ($options['upgrade']) {
     if (! isset($options['upgrade'])) {
-        die ('--upgrade <plugin_name> ; you can use --diag to list the plugins, otherwise try --upgrade-all');
+        die ('--upgrade=<plugin_name> ; you can use --diag to list the plugins, otherwise try --upgrade-all');
     }
     return $pCollection->upgrade($options['upgrade']);
 }
@@ -289,6 +298,13 @@ EOT;
         return true;
     }
 
+    public function detail($pluginname) {
+        putenv("LANGUAGE=C");
+        $myplugin = $this->find_plugin($pluginname);
+        echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
+        echo $myplugin->detail() . "\n";
+        return true;
+    }
 
     public function upgrade_all() {
         putenv("LANGUAGE=C");
@@ -443,6 +459,26 @@ class gitpPlugin {
         }
         $this->output('git status', $gitOutput, false);
         return [$gitReturn, $countStatus];
+    }
+
+    public function detail() {
+        global $rootdir;
+        echo "Name: $this->name\n";
+        echo "Repository: $this->repository\n";
+        echo "Path: $this->path\n";
+        echo "Branch: $this->branch\n";
+        echo "Revision: $this->revision\n";
+        $cd = chdir($rootdir . $this->path);
+        if (!$cd) {
+            printf("ERROR ! Unable to access %s\n", $this->path);
+            return RETURN_ERROR;
+        }
+
+        exec('git remote -v', $gitOutput, $gitReturn);
+        $this->output('git remote -v', $gitOutput, true);
+        unset($gitOuput);
+        exec('git branch -v -a', $branchOutput, $gitReturn);
+        $this->output('git branch -v -a', $branchOutput, true);
     }
 
     /**
