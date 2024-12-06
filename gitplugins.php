@@ -5,7 +5,7 @@
  *
  * @copyright 2017-2024 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   1.5.6 : 2024-12-04
+ * @version   1.6.0 : 2024-12-06
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
@@ -13,41 +13,32 @@ if (php_sapi_name() !== 'cli') {
     die ('CLI mode only');
 }
 
-define('CLI_SCRIPT', true);
 define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
 
 $rootdir = dirname(dirname(__DIR__));   // assuming the script is in admin/cli
-require_once($rootdir.'/lib/clilib.php');      // cli only functions
-// now get cli options
-list($options, $unrecognized) = cli_get_params(
+$longopts =
     [
-        'help' => false,
-        'gen-exclude' => false,
-        'gen-config' => false,
-        'diag' => false,
-        'list' => false,
-        'detail' => '',
-        'status-all' => false,
-        'checkconfig' => false,
-        'install-all' => false,
-        'install' => '',
-        'upgrade-all' => false,
-        'upgrade' => '',
-        'cleanup' => false,
-        'ascii' => false,
-    ],
-    ['h' => 'help']);
-if ($unrecognized) {
-    $unrecognized = implode("\n  ", $unrecognized);
-    cli_error(get_string('cliunknowoption', 'admin', $unrecognized));
-}
+        'help',
+        'gen-exclude',
+        'gen-config',
+        'diag',
+        'list',
+        'detail::',
+        'status-all',
+        'checkconfig',
+        'install-all',
+        'install::',
+        'upgrade-all',
+        'upgrade::',
+        'cleanup',
+        'ascii',
+    ];
 
 $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 
 Options:
--h, --help          Print out this help
---config=<file>     Read this configuration file instead of gitplugins.conf
+--help              Print out this help
 --ascii             No formatting sequences (compatibility with exotic terminals)
 
 --gen-config        Generate a sample gitplugins.conf file
@@ -64,73 +55,72 @@ Options:
 --gen-exclude       Generate a chunk of lines to insert in your .git/info/exclude file
 ";
 
-if (!empty($options['help'])) {
+$options = getopt('', $longopts);
+if (isset($options['help'])) {
     echo $help;
     return 0;
 }
 
-if ($options['gen-config']) {
+if (isset($options['gen-config'])) {
     printf("Writing %s ; to be completed.\n\n", gitpCollection::$configfile);
     return gitpCollection::generateConfig();
 }
 
 $config = require_once('gitplugins.conf');
-$pCollection = new gitpCollection($config, $options['ascii']);
+$pCollection = new gitpCollection($config, isset($options['ascii']));
 $pCollection->setDiagnostic();
 
 
-
-if ($options['diag']) {
+if (isset($options['diag'])) {
     return $pCollection->displayDiagnostic();
 }
 
-if ($options['list']) {
+if (isset($options['list'])) {
     return $pCollection->list();
 }
 
-if ($options['detail']) {
-    if (! isset($options['detail'])) {
+if (isset($options['detail'])) {
+    if (empty($options['detail'])) {
         die ('--detail=<plugin_name>');
     }
     return $pCollection->detail($options['detail']);
 }
 
-if ($options['checkconfig']) {
+if (isset($options['checkconfig'])) {
     return $pCollection->checkconfig();
 }
 
-if ($options['status-all']) {
+if (isset($options['status-all'])) {
     return $pCollection->status_all();
 }
 
-if ($options['install-all']) {
+if (isset($options['install-all'])) {
     return $pCollection->install_all();
 }
 
-if ($options['install']) {
-    if (! isset($options['install'])) {
-        die ('--install=<plugin_name> ; you can use --list or --diag to list the plugins, otherwise try --install-all');
+if (isset($options['install'])) {
+    if (empty($options['install'])) {
+        die ('--install=<plugin_name>. You can use --list to list the plugins ; otherwise try --install-all');
     }
     return $pCollection->install($options['install']);
 }
 
-if ($options['upgrade-all']) {
+if (isset($options['upgrade-all'])) {
     return $pCollection->upgrade_all();
 }
 
-if ($options['upgrade']) {
+if (isset($options['upgrade'])) {
     if (! isset($options['upgrade'])) {
         die ('--upgrade=<plugin_name> ; you can use --diag to list the plugins, otherwise try --upgrade-all');
     }
     return $pCollection->upgrade($options['upgrade']);
 }
 
-
-if ($options['cleanup']) {
+if (isset($options['cleanup'])) {
     return $pCollection->cleanup();
 }
 
-if ($options['gen-exclude']) {
+if (isset($options['gen-exclude'])) {
     echo "You can insert the following lines in the file `.git/info/exclude`\n";
     echo "\n" . $pCollection->generateExclude() . "\n";
     return RETURN_OK;
@@ -141,7 +131,7 @@ exit;
 
 
 class gitpCollection {
-    public $plugins = array();
+    public $plugins = [];
     public $verbosity;
     public $log = false;
     public $logfile = '';
@@ -171,7 +161,6 @@ return([
         ],
     ],
 ]);
-
 EOT;
 
     /**
