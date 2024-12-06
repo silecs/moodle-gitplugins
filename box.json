@@ -1,0 +1,4 @@
+{
+    "files": [ "index.php", "gitpPlugin.php", "gitpCollection.php" ],
+    "main": "index.php"
+}
