@@ -5,7 +5,7 @@
  *
  * @copyright 2017-2024 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   2.0.0 : 2024-12-07
+ * @version   2.0.2 : 2024-12-07
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
@@ -64,7 +64,7 @@ if (empty($options) || isset($options['help'])) {
 }
 
 if (isset($options['gen-config'])) {
-    printf("Writing %s ; to be completed.\n\n", gitpCollection::$configfile);
+    printf("Config sample ; to be completed and redirected to %s.\n\n", gitpCollection::CONFIG_FILE);
     return gitpCollection::generateConfig();
 }
 
