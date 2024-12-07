@@ -5,7 +5,7 @@
  *
  * @copyright 2017-2024 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   2.0.2 : 2024-12-07
+ * @version   2.0.3 : 2024-12-07
  * @link      https://github.com/silecs/moodle-gitplugins
  * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
  */
@@ -22,6 +22,8 @@ define('RETURN_ERROR', 1);
 $longopts =
     [
         'help',
+        'ascii',
+        'version',
         'gen-exclude',
         'gen-config',
         'diag',
@@ -34,7 +36,6 @@ $longopts =
         'upgrade-all',
         'upgrade::',
         'cleanup',
-        'ascii',
     ];
 
 $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
@@ -42,6 +43,7 @@ $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 Options:
 --help              Print out this help
 --ascii             No formatting sequences (compatibility with exotic terminals)
+--version           Print version revision and build datetime
 
 --gen-config        Generate a sample gitplugins.conf file
 --checkconfig       Check the consistency of the configuration file
@@ -60,6 +62,11 @@ Options:
 $options = getopt('', $longopts);
 if (empty($options) || isset($options['help'])) {
     echo $help;
+    return 0;
+}
+
+if (isset($options['version'])) {
+    echo "Phar built @git_commit_short@ @git_tag@ @horodatage@\n@copyright@\n\n";
     return 0;
 }
 
