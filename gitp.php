@@ -20,24 +20,23 @@ require_once __DIR__ . '/gitpCollection.php';
 define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
 
-$longopts =
-    [
-        'help',
-        'ascii',
-        'version',
-        'gen-exclude',
-        'gen-config',
-        'diag',
-        'list',
-        'detail::',
-        'status-all',
-        'checkconfig',
-        'install-all',
-        'install::',
-        'upgrade-all',
-        'upgrade::',
-        'cleanup',
-    ];
+$longopts = [
+    'help',
+    'ascii',
+    'version',
+    'gen-exclude',
+    'gen-config',
+    'diag',
+    'list',
+    'detail::',
+    'status-all',
+    'check-config',
+    'install-all',
+    'install::',
+    'upgrade-all',
+    'upgrade::',
+    'cleanup',
+];
 
 $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 
@@ -47,7 +46,7 @@ Options:
 --version           Print version revision and build datetime
 
 --gen-config        Generate a sample gitplugins.conf file
---checkconfig       Check the consistency of the configuration file
+--check-config       Check the consistency of the configuration file
 --diag              Diagnostic of all declared plugins
 --list              List all declared plugins (without diagnostic)
 --detail=<name>     Display details about one plugin
@@ -95,8 +94,8 @@ if (isset($options['detail'])) {
     return $pCollection->detail($options['detail']);
 }
 
-if (isset($options['checkconfig'])) {
-    return $pCollection->checkconfig();
+if (isset($options['check-config'])) {
+    return $pCollection->check_config();
 }
 
 if (isset($options['status-all'])) {

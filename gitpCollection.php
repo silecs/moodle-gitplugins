@@ -83,12 +83,12 @@ EOSAMPLE;
      * check consistency of the configuration file
      * @return boolean
      */
-    public function checkconfig() {
+    public function check_config() {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
-            $alerts = $plugin->checkconfig();
+            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "... ";
+            $alerts = $plugin->check_config();
             if ($alerts) {
-                echo join("\n", $alerts) . "\n";
+                echo "\n" . join("\n", $alerts) . "\n";
             } else {
                 echo "OK.\n";
             }

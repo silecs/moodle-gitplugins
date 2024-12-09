@@ -176,7 +176,7 @@ class gitpPlugin {
      * check the plugin configuration file
      * @return string  diagnostic message
      */
-    public function checkconfig() {
+    public function check_config() {
         $alerts = [];
 
         $dir = dirname($this->root . $this->path);
