@@ -2,51 +2,38 @@
 
 ## Overview
 
-This Moodle tool is a simple cli script to help deploying Moodle plugins via Git,
+This Moodle tool is a cli tool (executable phar) to help deploying Moodle plugins via Git,
 but without using submodules.
 
-You need to install one single file in the /admin/cli directory, the `gitplugins.php` script.
+You need to install one single file, `gitp.phar`, where you want (inside or outside the Moodle tree).
+You can use the same phar to manage several instances, a bit like `composer`.
 
-## gitplugins.conf
+## .gitplugins.conf
 
-The `gitplugins.conf` file has two sections : a short list of settings, and
-a list of all the plugins you want to manage (install, upgrade...) following the format:
-```
-    'local/mailtest' => [
-        'path' => '/local/mailtest', // mandatory ; path from the moodle root
-        'gitrepository' => 'https://github.com/michael-milette/moodle-local_mailtest', // mandatory
-        'gitbranch' => '', // optional ; git branch (incompatible with gitrevision)
-        'gitrevision' => '', // optional ; precise git revision (hash or tag)  (incompatible with gitbranch)
-    ],
-```
+The `.gitplugins.conf` file has two sections :
 
+* a short list of settings (logfile, verbosity),
+* and a list of the plugins you want to manage (install, upgrade...)
+
+This file follows a standard format described by `gitp.phar --gen-config`.
 You have to adjust the settings (verbosity level) and to fill the information on the wanted plugins.
 
 ## Execution
 
-You can then launch `php gitplugins.php` with one of the options:
+You must define an environment variable `MOODLE_ROOT` with the root of the Moodle instance.
+You can then launch `php gitp.phar` with one of the commands available with `php gitp.phar --help`. The most common are:
 
-* `--gen-config` generates a sample gitplugins.conf file
-* `--check` checks the consistency of 'gitplugins.conf'
 * `--diag` displays a diagnostic of all declared plugins
-* `--list` lists all declared plugins, without diagnostic
-* `--status-all` launches a `git status` on each declared plugin and displays a summary
 * `--install-all` installs all plugins that are not already present
 * `--install=<name>` installs this plugin according to gitplugins.conf
 * `--upgrade-all` upgrades all plugins already installed
 * `--upgrade=<name>` upgrades this plugin according to gitplugins.conf
 * `--cleanup` "removes" all plugins in an inconsistent state (by **renaming** them, so restoration is possible)
-* `--gen-exclude` generates a chunk of lines to insert in your .git/info/exclude file
 
-"Cleaned" repositories are renamed to `<orig-name>.gpcleanup-<timestamp>`, so you can
+Please note that "cleaned" repositories are renamed to `<orig-name>.gpcleanup-<timestamp>`, so you can
 easily find and restore them if needed.
 
 ## Installation 
 
-The simplest way to install `gitplugins` is to download directly, with `wget` (or `curl`) :
-
-``` 
-wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
-```
-
-Alternatively, you can easily copy-paste the entire code in a new file.
+The simplest way to install `gitp.phar` is to download the latest release directly from github :
+<https://github.com/silecs/moodle-gitplugins/releases>

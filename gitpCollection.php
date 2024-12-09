@@ -8,9 +8,10 @@ class gitpCollection {
     public $ascii = false;
     public $rootdir;
 
-    const CONFIG_FILE = 'admin/cli/gitplugins.conf';
+    const CONFIG_FILE = '.gitplugins.conf';
+    const LOG_FILE    = '.gitplugins.log';
 
-    public static $configsample = <<<'EOT'
+    public static $configsample = <<<EOSAMPLE
 <?php
 return([
     'settings' => [
@@ -33,7 +34,7 @@ return([
         ],
     ],
 ]);
-EOT;
+EOSAMPLE;
 
     /**
      * @param array $config raw content of configuration file (gitplugin.conf)
@@ -41,17 +42,27 @@ EOT;
      * @return boolean
      */
     public function __construct($ascii=0) {
-        // depuis un .phar, __FILE__ et __DIR__ renvoient "phar:///path/to/my/file"
         // assuming the script is in admin/cli
-        $this->rootdir = dirname(dirname(dirname(Phar::running(false))));
-        $config = require_once($this->rootdir . '/' . self::CONFIG_FILE);
+        // $this->rootdir = dirname(dirname(dirname(Phar::running(false))));
+        if (!getenv('MOODLE_ROOT')) {
+            die("You must define an environment variable MOODLE_ROOT, where lies the main config.php.\n\n");
+        }
+        if (!is_dir(getenv('MOODLE_ROOT'))) {
+            die("Path must exist : " . getenv('MOODLE_ROOT') . "\n\n");
+        }
+        $this->rootdir = realpath(getenv('MOODLE_ROOT'));
+        $configpath = $this->rootdir . '/' . self::CONFIG_FILE;
+        if (!is_readable($configpath)) {
+            die("Config file must exist and be readable: $configpath\n\n");
+        }
+        $config = require_once($configpath);
 
         $settings = $config['settings'];
         $this->verbosity = isset($settings['verbosity']) ? $settings['verbosity'] : 0;
         $this->ascii = $ascii;
         if (isset($settings['log'])) {
             if ($settings['log'] === true) {
-                $this->logfile = $this->rootdir . "/admin/cli/gitplugins.log";
+                $this->logfile = $this->rootdir . '/' . self::LOG_FILE;
             } else {
                 $this->logfile = $settings['log'];
                 $this->log = true;

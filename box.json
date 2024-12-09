@@ -2,7 +2,7 @@
     "files": [ "gitp.php", "gitpPlugin.php", "gitpCollection.php" ],
     "main": "gitp.php",
     "replacements": {
-        "copyright": "(C) SILECS SARL 2024 - GNU Affero Public License v.3"
+        "copyright": "(C) SILECS SARL 2017-2024 - GNU Affero Public License v.3"
     },
     "git-commit-short": "git_commit_short",
     "git-tag": "git_tag",

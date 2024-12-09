@@ -1,20 +1,21 @@
 #!/usr/bin/env php
 <?php
 /**
- * gitplugins - A cli administration tool to help deploying Moodle plugins via Git
+ * gitp.phar - A cli administration tool to help deploying Moodle plugins via Git
  *
  * @copyright 2017-2024 Silecs {@link http://www.silecs.info/societe}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @version   2.0.3 : 2024-12-07
  * @link      https://github.com/silecs/moodle-gitplugins
- * install with: wget https://raw.githubusercontent.com/silecs/moodle-gitplugins/master/gitplugins.php
+ * download from https://github.com/silecs/moodle-gitplugins/releases
  */
+const GITPLUGINS_VERSION = '2.1.0 2024-12-09';
+
 if (php_sapi_name() !== 'cli') {
     die ('CLI mode only');
 }
 
-require_once "gitpPlugin.php";
-require_once "gitpCollection.php";
+require_once __DIR__ . '/gitpPlugin.php';
+require_once __DIR__ . '/gitpCollection.php';
 
 define('RETURN_OK', 0);
 define('RETURN_ERROR', 1);
@@ -66,7 +67,7 @@ if (empty($options) || isset($options['help'])) {
 }
 
 if (isset($options['version'])) {
-    echo "Phar built @git_commit_short@ @git_tag@ @horodatage@\n@copyright@\n\n";
+    printf("Gitplugins Version %s, Phar built @horodatage@ @git_commit_short@\n@copyright@\n\n", GITPLUGINS_VERSION);
     return 0;
 }
 
