@@ -5,7 +5,6 @@ class gitpCollection {
     public $verbosity;
     public $log = false;
     public $logfile = '';
-    public $ascii = false;
     public $rootdir;
 
     const CONFIG_FILE = '.gitplugins.conf';
@@ -15,7 +14,6 @@ class gitpCollection {
 <?php
 return([
     'settings' => [
-        'verbosity' => 1,  // 0 or 1
         'log' => false,    // FALSE, TRUE or an absolute path for the logfile
     ],
     'plugins' => [
@@ -39,7 +37,7 @@ EOSAMPLE;
     /**
      * @param array $config raw content of configuration file (gitplugin.conf)
      */
-    public function __construct(int $ascii=0)
+    public function __construct(int $verbosity)
     {
         // assuming the script is in admin/cli
         // $this->rootdir = dirname(dirname(dirname(Phar::running(false))));
@@ -57,8 +55,7 @@ EOSAMPLE;
         $config = require_once($configpath);
 
         $settings = $config['settings'];
-        $this->verbosity = isset($settings['verbosity']) ? $settings['verbosity'] : 0;
-        $this->ascii = $ascii;
+        $this->verbosity = $verbosity;
         if (isset($settings['log'])) {
             if ($settings['log'] === true) {
                 $this->logfile = $this->rootdir . '/' . self::LOG_FILE;
@@ -85,7 +82,7 @@ EOSAMPLE;
     public function check_config(): bool
     {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "... ";
+            echo $this->pname($plugin->name);
             $alerts = $plugin->check_config();
             if ($alerts) {
                 echo "\n" . join("\n", $alerts) . "\n";
@@ -100,7 +97,7 @@ EOSAMPLE;
     {
         $summary = [];
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'invert', $this->ascii) . "...\n";
+            echo $this->pname($plugin->name);
             list($diag, $status_short) = $plugin->status();
             $index = (int)($diag > 0); // 0 or 1
             if ($status_short) {
@@ -109,10 +106,10 @@ EOSAMPLE;
             $summary[$index][] = $plugin->name;
         }
         if (isset($summary[0])) {
-            echo "\n\n" . gitpTerm('Status OK :', 'invert', $this->ascii) . join(' ', $summary[0]);
+             echo $this->vecho("\n\nSTATUS OK :\n" . join(' ', $summary[0]), 1);
         }
         if (isset($summary[1])) {
-        echo "\n\n" . gitpTerm('Status errors :', 'invert', $this->ascii) . join(' ', $summary[1]);
+             echo $this->vecho("\n\nSTATUS ERRORS :\n" . join(' ', $summary[0]), 0);
         }
         echo "\n\n";
         if ($summary_short) {
@@ -170,7 +167,7 @@ EOSAMPLE;
     public function install_all(): bool
     {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
+            echo $this->vecho("\nPLUGIN " . $plugin->name . "...\n", 0);
             $this->log_to_file($plugin->name);
             echo $plugin->install() . "\n";
         }
@@ -180,7 +177,7 @@ EOSAMPLE;
     public function install($pluginname): bool
     {
         $myplugin = $this->find_plugin($pluginname);
-        echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
+        echo $this->pname($myplugin->name);
         $this->log_to_file($pluginname);
         echo $myplugin->install() . "\n";
         return true;
@@ -189,7 +186,7 @@ EOSAMPLE;
     public function detail($pluginname): bool
     {
         $myplugin = $this->find_plugin($pluginname);
-        echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
+        echo $this->pname($myplugin->name);
         echo $myplugin->detail() . "\n";
         return true;
     }
@@ -197,7 +194,7 @@ EOSAMPLE;
     public function upgrade_all(): bool
     {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
+            echo $this->vecho("\n" . strtoupper($plugin->name) . "...\n", 0);
             $this->log_to_file($plugin->name);
             echo $plugin->upgrade() . "\n";
         }
@@ -207,7 +204,7 @@ EOSAMPLE;
     public function upgrade($pluginname): bool
     {
         $myplugin = $this->find_plugin($pluginname);
-        echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
+        echo $this->pname($myplugin->name);
         $this->log_to_file($pluginname);
         echo $myplugin->upgrade() . "\n";
         return true;
@@ -217,7 +214,7 @@ EOSAMPLE;
     public function cleanup(): bool
     {
         foreach ($this->plugins as $plugin) {
-            echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
+            echo $this->vecho("\n" . strtoupper($plugin->name) . "...\n", 0);
             echo $plugin->cleanup() . "\n";
         }
         return true;
@@ -272,6 +269,20 @@ EOSAMPLE;
                 sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname),
                 FILE_APPEND
             );
+        }
+    }
+
+    private function pname($name): string
+    {
+        return $this->vecho("\nPLUGIN " . $name . "...\n", 1);
+    }
+
+    private function vecho($text, $verbmin=1): string
+    {
+        if ($this->verbosity >= $verbmin) {
+            return $text;
+        } else {
+            return '';
         }
     }
 

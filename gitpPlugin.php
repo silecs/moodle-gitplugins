@@ -73,15 +73,22 @@ class gitpPlugin {
         $countStatus = [];
         $cd = chdir($this->root . $this->path);
         if (!$cd) {
-            printf("ERROR ! Unable to access %s\n", $this->path);
-            return [RETURN_ERROR, []];
+            $msg = sprintf("ERROR ! Unable to access %s\n", $this->path);
+            $this->output('chdir', [$msg], 0);
+            return [RETURN_ERROR, ['XX' => $msg]];
+        }
+        exec('git remote get-url origin', $gitOrigin);
+        if ($gitOrigin[0] !== $this->repository) {
+            $msg = sprintf("ERROR ! inconsistent repositories (config) %s vs (local) %s", $gitOrigin[0], $this->repository);
+            $this->output('git remote', [$msg], 0);
+            return [RETURN_ERROR, ['XX' => $msg]];
         }
         exec('git status', $gitOutput, $gitReturn);
         exec('git status --short | cut -c1-2', $statusShort, $trash);
         foreach ($statusShort as $flag) {
             $countStatus[$flag] = isset($countStatus[$flag]) ? $countStatus[$flag]+1 : 1;
         }
-        $this->output('git status', $gitOutput, false);
+        $this->output('git status', $gitOutput, 2);
         return [$gitReturn, $countStatus];
     }
 
@@ -99,10 +106,10 @@ class gitpPlugin {
         }
 
         exec('git remote -v', $gitOutput, $gitReturn);
-        $this->output('git remote -v', $gitOutput, true);
+        $this->output('git remote -v', $gitOutput, 1);
         unset($gitOuput);
         exec('git branch -v -a', $branchOutput, $gitReturn);
-        $this->output('git branch -v -a', $branchOutput, true);
+        $this->output('git branch -v -a', $branchOutput, 1);
         return RETURN_OK;
     }
 
@@ -129,7 +136,7 @@ class gitpPlugin {
                 $this->root . $this->path
         );
         exec($cmdline, $gitOutput, $gitReturn);
-        $this->output($cmdline, $gitOutput, false, true);
+        $this->output($cmdline, $gitOutput, 1, true);
         return $gitReturn;
     }
 
@@ -159,23 +166,23 @@ class gitpPlugin {
         if (!empty($this->branch)) {
             $cmdline = sprintf("git checkout %s", $this->branch);
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, true);
+            $this->output($cmdline, $gitOutput, 1, true);
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, true);
+            $this->output($cmdline, $gitOutput, 1, true);
             return $gitReturn;
         } elseif (!empty($this->revision)) {
             $cmdline = sprintf("git checkout %s", $this->revision);
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, true);
+            $this->output($cmdline, $gitOutput, 1, true);
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, true);
+            $this->output($cmdline, $gitOutput, 1, true);
             return $gitReturn;
         } else {
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, true);
+            $this->output($cmdline, $gitOutput, 1, true);
             return $gitReturn;
         }
     }
@@ -238,9 +245,9 @@ class gitpPlugin {
      * @param array $lines output lines
      * @param boolean $always : display whatever this->verbosity
      */
-    private function output($cmdline, $lines, $always = false, $log = false)
+    private function output($cmdline, $lines, $verbmin = 1, $log = false)
     {
-        if ($always || $this->verbosity > 0) {
+        if ($this->verbosity >= $verbmin) {
             echo "  < " . $cmdline . "\n";
             foreach ($lines as $line) {
                 echo "    > " . $line . "\n";

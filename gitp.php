@@ -8,7 +8,7 @@
  * @link      https://github.com/silecs/moodle-gitplugins
  * download from https://github.com/silecs/moodle-gitplugins/releases
  */
-const GITPLUGINS_VERSION = '2.1.0 2024-12-09';
+const GITPLUGINS_VERSION = '2.2.0 2024-12-09';
 
 if (php_sapi_name() !== 'cli') {
     die ('CLI mode only');
@@ -22,8 +22,8 @@ define('RETURN_ERROR', 1);
 
 $longopts = [
     'help',
-    'ascii',
     'version',
+    'verbose::',
     'gen-exclude',
     'gen-config',
     'diag',
@@ -42,21 +42,26 @@ $help = "Plugin installation or upgrade via Git, as declared in gitplugins.conf
 
 Options:
 --help              Print out this help
---ascii             No formatting sequences (compatibility with exotic terminals)
 --version           Print version revision and build datetime
+--verbose=N         Verbosity = 0-2, default=1
 
+(non-git commands)
 --gen-config        Generate a sample gitplugins.conf file
---check-config       Check the consistency of the configuration file
---diag              Diagnostic of all declared plugins
+--gen-exclude       Generate a chunk of lines to insert in your .git/info/exclude file
 --list              List all declared plugins (without diagnostic)
+--diag              Diagnostic of all declared plugins
+
+(local-git commands)
 --detail=<name>     Display details about one plugin
 --status-all        Git status on each declared plugin
+--cleanup           Remove all plugins in an inconsistent state (by RENAMING them so restoration is possible)
+
+(remote-git commands)
+--check-config      Check the consistency of the configuration file
 --install-all       Install all plugins that are not already present
 --install=<name>    Install this plugin according to gitplugins.conf
 --upgrade-all       Upgrade all plugins already installed
 --upgrade=<name>    Upgrade this plugin according to gitplugins.conf
---cleanup           Remove all plugins in an inconsistent state (by RENAMING them so restoration is possible)
---gen-exclude       Generate a chunk of lines to insert in your .git/info/exclude file
 ";
 
 $options = getopt('', $longopts);
@@ -75,7 +80,12 @@ if (isset($options['gen-config'])) {
     return gitpCollection::generateConfig();
 }
 
-$pCollection = new gitpCollection(isset($options['ascii']));
+if (isset($options['verbose'])) {
+    $verbosity = (int)$options['verbose'];
+} else {
+    $verbosity = 1;
+}
+$pCollection = new gitpCollection($verbosity);
 $pCollection->setDiagnostic();
 
 
@@ -138,26 +148,3 @@ if (isset($options['gen-exclude'])) {
 
 exit;
 
-/**
- * @param string $text
- * @param string $style (one of the $escape keys)
- * @param bool $ascii : true => no escape sequence
- * @return string
- */
-function gitpTerm($text, $style, $ascii)
-{
-    $escape = [
-        'bold' => ['start' => "\e[1m", 'stop' => "\e[21m"],
-        'dim' => ['start' => "\e[2m", 'stop' => "\e[22m"],
-        'under' => ['start' => "\e[4m", 'stop' => "\e[24m"],
-        'blink' => ['start' => "\e[5m", 'stop' => "\e[25m"],
-        'invert' => ['start' => "\e[7m", 'stop' => "\e[27m"],
-        'hidden' => ['start' => "\e[8m", 'stop' => "\e[28m"],
-    ];
-    $fstyle = $escape[$style];
-
-    if ($ascii) {
-        return $text;
-    } 
-    return $fstyle['start'] . $text . $fstyle['stop'];
-}
