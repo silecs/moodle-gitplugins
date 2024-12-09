@@ -62,12 +62,12 @@ Options:
 $options = getopt('', $longopts);
 if (empty($options) || isset($options['help'])) {
     echo $help;
-    return 0;
+    return RETURN_OK;
 }
 
 if (isset($options['version'])) {
     printf("Gitplugins Version %s, Phar built @horodatage@ @git_commit_short@\n@copyright@\n\n", GITPLUGINS_VERSION);
-    return 0;
+    return RETURN_OK;
 }
 
 if (isset($options['gen-config'])) {
@@ -80,11 +80,13 @@ $pCollection->setDiagnostic();
 
 
 if (isset($options['diag'])) {
-    return $pCollection->displayDiagnostic();
+    echo $pCollection->displayDiagnostic();
+    return RETURN_OK;
 }
 
 if (isset($options['list'])) {
-    return $pCollection->list();
+    echo $pCollection->list();
+    return RETURN_OK;
 }
 
 if (isset($options['detail'])) {

@@ -38,10 +38,9 @@ EOSAMPLE;
 
     /**
      * @param array $config raw content of configuration file (gitplugin.conf)
-     * @param integer $ascii
-     * @return boolean
      */
-    public function __construct($ascii=0) {
+    public function __construct(int $ascii=0)
+    {
         // assuming the script is in admin/cli
         // $this->rootdir = dirname(dirname(dirname(Phar::running(false))));
         if (!getenv('MOODLE_ROOT')) {
@@ -71,6 +70,7 @@ EOSAMPLE;
             $this->log = false;
         }
         $this->log = $config['settings']['log'];
+        putenv("LANGUAGE=C");
 
         foreach ($config['plugins'] as $name => $plugin) {
             $newplugin = (new gitpPlugin())->init($name, $plugin, $this->rootdir, $this->verbosity, $this->logfile);
@@ -81,9 +81,9 @@ EOSAMPLE;
 
     /**
      * check consistency of the configuration file
-     * @return boolean
      */
-    public function check_config() {
+    public function check_config(): bool
+    {
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "... ";
             $alerts = $plugin->check_config();
@@ -96,9 +96,9 @@ EOSAMPLE;
         return true;
     }
 
-    public function status_all() {
+    public function status_all(): bool
+    {
         $summary = [];
-        putenv("LANGUAGE=C");
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'invert', $this->ascii) . "...\n";
             list($diag, $status_short) = $plugin->status();
@@ -127,36 +127,48 @@ EOSAMPLE;
         return true;
     }
 
-    public function setDiagnostic() {
+    public function setDiagnostic()
+    {
         foreach ($this->plugins as $plugin) {
             $plugin->setDiagnostic();
         }
         return true;
     }
 
-    public function displayDiagnostic() {
+    public function displayDiagnostic(): string
+    {
+        $out = '';
         foreach (gitpPlugin::DIAGMESSAGE as $error => $message) {
-            echo $message . " : \n";
+            $out .= $message . " : \n";
             foreach ($this->plugins as $plugin) {
                 if ($plugin->diagnostic == $error) {
-                    echo "    * " . $plugin->name . " : " . $plugin->path . "\n";
+                    $out .= "    * " . $plugin->name . " : " . $plugin->path . "\n";
                 }
             }
-            echo "\n";
+            $out .= "\n";
         }
+        return $out;
     }
 
-    public function list() {
+    public function list(): string
+    {
+        $out = '';
         $i = 0;
         foreach ($this->plugins as $plugin) {
             $i++;
-            printf("%3d. %-25s %-40s %-10s %-10s\n", $i, $plugin->name, $plugin->path,
-                 $plugin->revision, $plugin->branch);
+            $out .= sprintf("%3d. %-25s %-40s %-10s %-10s\n",
+                $i,
+                $plugin->name,
+                $plugin->path,
+                $plugin->revision,
+                $plugin->branch
+            );
         }
+        return $out;
     }
 
-    public function install_all() {
-        putenv("LANGUAGE=C");
+    public function install_all(): bool
+    {
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             $this->log_to_file($plugin->name);
@@ -165,8 +177,8 @@ EOSAMPLE;
         return true;
     }
 
-    public function install($pluginname) {
-        putenv("LANGUAGE=C");
+    public function install($pluginname): bool
+    {
         $myplugin = $this->find_plugin($pluginname);
         echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
         $this->log_to_file($pluginname);
@@ -174,16 +186,16 @@ EOSAMPLE;
         return true;
     }
 
-    public function detail($pluginname) {
-        putenv("LANGUAGE=C");
+    public function detail($pluginname): bool
+    {
         $myplugin = $this->find_plugin($pluginname);
         echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
         echo $myplugin->detail() . "\n";
         return true;
     }
 
-    public function upgrade_all() {
-        putenv("LANGUAGE=C");
+    public function upgrade_all(): bool
+    {
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             $this->log_to_file($plugin->name);
@@ -192,8 +204,8 @@ EOSAMPLE;
         return true;
     }
 
-    public function upgrade($pluginname) {
-        putenv("LANGUAGE=C");
+    public function upgrade($pluginname): bool
+    {
         $myplugin = $this->find_plugin($pluginname);
         echo "\n" . gitpTerm($myplugin->name, 'bold', $this->ascii) . "...\n";
         $this->log_to_file($pluginname);
@@ -202,7 +214,8 @@ EOSAMPLE;
     }
 
 
-    public function cleanup() {
+    public function cleanup(): bool
+    {
         foreach ($this->plugins as $plugin) {
             echo "\n" . gitpTerm($plugin->name, 'bold', $this->ascii) . "...\n";
             echo $plugin->cleanup() . "\n";
@@ -210,7 +223,8 @@ EOSAMPLE;
         return true;
     }
 
-    public function generateExclude() {
+    public function generateExclude(): string
+    {
         $excludes = [];
         $begin = [
             '## gitplugins BEGIN autogenerated exclude',
@@ -233,24 +247,31 @@ EOSAMPLE;
         }
     }
 
-    public static function generateConfig() {
+    public static function generateConfig(): string
+    {
         echo self::$configsample;
     }
 
-    private function find_plugin($pluginname) {
-        putenv("LANGUAGE=C");
+
+    private function find_plugin($pluginname): ?gitpPlugin
+    {
         foreach ($this->plugins as $plugin) {
             if ($plugin->name == $pluginname) {
                 return $plugin;
             }
         }
-        die ($pluginname . " not listed in gitplugins.conf. You can use --diag\n\n");
+        die (sprintf("%s not listed in %s. You can use --list\n\n", $pluginname, self::CONFIG_FILE));
         return false;
     }
 
-    private function log_to_file($pluginname) {
+    private function log_to_file($pluginname)
+    {
         if ($this->log) {
-            file_put_contents($this->logfile, sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname), FILE_APPEND);
+            file_put_contents(
+                $this->logfile,
+                sprintf("\n%s  %s\n", date(DateTime::ISO8601), $pluginname),
+                FILE_APPEND
+            );
         }
     }
 

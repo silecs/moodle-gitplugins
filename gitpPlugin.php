@@ -26,7 +26,8 @@ class gitpPlugin {
     public $logfile;
     public $root; // Moodle root directory
 
-    public function init($name, $pluginconf, $root, $verbosity, $logfile) {
+    public function init($name, $pluginconf, $root, $verbosity, $logfile): gitpPlugin
+    {
         $newplugin = new gitpPlugin();
         // mandatory attributes:
         $newplugin->name = $name;
@@ -42,7 +43,8 @@ class gitpPlugin {
         return $newplugin;
     }
 
-    public function setDiagnostic() {
+    public function setDiagnostic(): string
+    {
         if (empty($this->path)) {
             $this->diagnostic = self::DIAG_MALFORMED;
             return $this->diagnostic;
@@ -64,13 +66,15 @@ class gitpPlugin {
 
     /**
      * get information with "git status"
+     * @fixme return mixed devrait être strictem
      */
-    public function status() {
+    public function status(): array
+    {
         $countStatus = [];
         $cd = chdir($this->root . $this->path);
         if (!$cd) {
             printf("ERROR ! Unable to access %s\n", $this->path);
-            return RETURN_ERROR;
+            return [RETURN_ERROR, []];
         }
         exec('git status', $gitOutput, $gitReturn);
         exec('git status --short | cut -c1-2', $statusShort, $trash);
@@ -81,7 +85,8 @@ class gitpPlugin {
         return [$gitReturn, $countStatus];
     }
 
-    public function detail() {
+    public function detail(): int
+    {
         echo "Name: $this->name\n";
         echo "Repository: $this->repository\n";
         echo "Path: $this->path\n";
@@ -98,13 +103,15 @@ class gitpPlugin {
         unset($gitOuput);
         exec('git branch -v -a', $branchOutput, $gitReturn);
         $this->output('git branch -v -a', $branchOutput, true);
+        return RETURN_OK;
     }
 
     /**
      * install the target plugins with "git clone"
      * @param string $logfile (or false)
      */
-    public function install() {
+    public function install(): int
+    {
         if ($this->diagnostic != self::DIAG_NOT_EXIST) {
             printf("Warning ! Unable to install plugin %s ; already exists in %s.\n", $this->name, $this->path);
             return RETURN_ERROR;
@@ -122,7 +129,7 @@ class gitpPlugin {
                 $this->root . $this->path
         );
         exec($cmdline, $gitOutput, $gitReturn);
-        $this->output($cmdline, $gitOutput, false, $this->logfile);
+        $this->output($cmdline, $gitOutput, false, true);
         return $gitReturn;
     }
 
@@ -130,7 +137,8 @@ class gitpPlugin {
      * upgrade the target plugins with git checkout / git rebase
      * @param string $logfile (or false)
      */
-    public function upgrade() {
+    public function upgrade(): int
+    {
         if ($this->diagnostic != self::DIAG_OK) {
             printf("Warning, unable to update %s ! %s  %s.\n", $this->name, $this->path, $this->diagMsg);
             return RETURN_ERROR;
@@ -151,23 +159,23 @@ class gitpPlugin {
         if (!empty($this->branch)) {
             $cmdline = sprintf("git checkout %s", $this->branch);
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $this->logfile);
+            $this->output($cmdline, $gitOutput, false, true);
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $this->logfile);
+            $this->output($cmdline, $gitOutput, false, true);
             return $gitReturn;
         } elseif (!empty($this->revision)) {
             $cmdline = sprintf("git checkout %s", $this->revision);
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $this->logfile);
+            $this->output($cmdline, $gitOutput, false, true);
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $this->logfile);
+            $this->output($cmdline, $gitOutput, false, true);
             return $gitReturn;
         } else {
             $cmdline = "git rebase";
             exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, false, $this->logfile);
+            $this->output($cmdline, $gitOutput, false, true);
             return $gitReturn;
         }
     }
@@ -176,7 +184,8 @@ class gitpPlugin {
      * check the plugin configuration file
      * @return string  diagnostic message
      */
-    public function check_config() {
+    public function check_config(): string
+    {
         $alerts = [];
 
         $dir = dirname($this->root . $this->path);
@@ -210,7 +219,8 @@ class gitpPlugin {
      * @param integer $timestamp
      * @return string diagnostic message
      */
-    public function cleanup() {
+    public function cleanup(): string
+    {
         if ($this->diagnostic != self::DIAG_NOT_GIT) {
             return '  unchanged';
         }
@@ -227,19 +237,19 @@ class gitpPlugin {
      * @param string $cmdline "input" command line
      * @param array $lines output lines
      * @param boolean $always : display whatever this->verbosity
-     * @param string $logfile (or FALSE)
      */
-    private function output($cmdline, $lines, $always = false, $logfile = false) {
+    private function output($cmdline, $lines, $always = false, $log = false)
+    {
         if ($always || $this->verbosity > 0) {
             echo "  < " . $cmdline . "\n";
             foreach ($lines as $line) {
                 echo "    > " . $line . "\n";
             }
         }
-        if ($logfile) {
-            file_put_contents($logfile, sprintf("  < %s\n", $cmdline), FILE_APPEND);
+        if ($log) {
+            file_put_contents($this->logfile, sprintf("  < %s\n", $cmdline), FILE_APPEND);
             foreach ($lines as $line) {
-                file_put_contents($logfile, sprintf("    > %s\n", $line), FILE_APPEND);
+                file_put_contents($this->logfile, sprintf("    > %s\n", $line), FILE_APPEND);
             }
         }
     }
