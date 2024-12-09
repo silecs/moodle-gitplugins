@@ -75,13 +75,13 @@ class gitpPlugin {
         if (!$cd) {
             $msg = sprintf("ERROR ! Unable to access %s\n", $this->path);
             $this->output('chdir', [$msg], 0);
-            return [RETURN_ERROR, ['XX' => $msg]];
+            return [RETURN_ERROR, ['ZZ' => 1]];
         }
         exec('git remote get-url origin', $gitOrigin);
         if ($gitOrigin[0] !== $this->repository) {
             $msg = sprintf("ERROR ! inconsistent repositories (config) %s vs (local) %s", $gitOrigin[0], $this->repository);
             $this->output('git remote', [$msg], 0);
-            return [RETURN_ERROR, ['XX' => $msg]];
+            return [RETURN_ERROR, ['ZX' => 1]];
         }
         exec('git status', $gitOutput, $gitReturn);
         exec('git status --short | cut -c1-2', $statusShort, $trash);
