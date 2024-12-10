@@ -73,6 +73,9 @@ class gitpPlugin {
         }
         chdir($this->root . $this->path);
         exec('git remote get-url origin', $gitOrigin);
+        if (empty($this->repository) || empty($gitOrigin[0])) {
+            return [self::DIAG_INCONSISTENT_REMOTE, sprintf('config="%s" vs git-remote="%s"', $this->repository, $gitOrigin[0])];
+        }
         $repoConfig = $this->getRemoteRadix($this->repository);
         $repoLocal = $this->getRemoteRadix($gitOrigin[0]);
         if ($repoConfig !== $repoLocal) {
