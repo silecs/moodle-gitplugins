@@ -6,12 +6,14 @@ class gitpPlugin {
     const DIAG_NOT_EXIST = 1;
     const DIAG_NOT_GIT = 2;
     const DIAG_MALFORMED = 3;
+    const DIAG_INCONSISTENT_REMOTE = 4;
 
-    const DIAGMESSAGE = [
+    const DIAG_MESSAGE = [
         self::DIAG_OK => 'OK: plugin directory exists, and is a git checkout',
         self::DIAG_NOT_EXIST => 'plugin directory DOES NOT exist',
         self::DIAG_NOT_GIT => 'plugin directory exists but IS NOT a git checkout',
         self::DIAG_MALFORMED => 'plugin declaration malformed in the config file',
+        self::DIAG_INCONSISTENT_REMOTE => 'inconsistent repositories (config vs git-remote)',
     ];
 
     public $name;           // mandatory ; local name for the plugin, with slash separators eg. 'block/course_contents'
@@ -22,6 +24,7 @@ class gitpPlugin {
     public $revision = null;    // optional ; precise git revision (hash or tag)
     public $diagnostic;
     public $diagMsg = '';
+    public $diagComplement = '';
     public $verbosity;
     public $logfile;
     public $root; // Moodle root directory
@@ -43,25 +46,51 @@ class gitpPlugin {
         return $newplugin;
     }
 
-    public function setDiagnostic(): string
+    public function setDiagnostic(): void
+    {
+        [$diagCode, $diagComplement] = $this->doDiagnostic();
+        $this->diagnostic = $diagCode;
+        $this->diagMsg = self::DIAG_MESSAGE[$this->diagnostic];
+        $this->diagComplement = $diagComplement;
+    }
+
+    /**
+     *
+     * @return array [int Diagnostic_Code, string Diagnostic_Complement]
+     */
+    private function doDiagnostic(): array
     {
         if (empty($this->path)) {
-            $this->diagnostic = self::DIAG_MALFORMED;
-            return $this->diagnostic;
+            return [self::DIAG_MALFORMED, $this->path];
         }
         $dir = $this->root . $this->path;
-        if (file_exists($dir) && is_dir($dir)) {
-            $gitdir = $dir . '/.git';
-            if (file_exists($gitdir) && is_dir($gitdir)) {
-                $this->diagnostic = self::DIAG_OK;
-            } else {
-                $this->diagnostic = self::DIAG_NOT_GIT;
-            }
-        } else {
-            $this->diagnostic = self::DIAG_NOT_EXIST;
+        if (!file_exists($dir) || !is_dir($dir)) {
+            return [self::DIAG_NOT_EXIST, $dir];
         }
-        $this->diagMsg = self::DIAGMESSAGE[$this->diagnostic];
-        return $this->diagnostic;
+        $gitdir = $dir . '/.git';
+        if (!file_exists($gitdir) || !is_dir($gitdir)) {
+            return [self::DIAG_NOT_GIT, $gitdir];
+        }
+        chdir($this->root . $this->path);
+        exec('git remote get-url origin', $gitOrigin);
+        $repoConfig = $this->getRemoteRadix($this->repository);
+        $repoLocal = $this->getRemoteRadix($gitOrigin[0]);
+        if ($repoConfig !== $repoLocal) {
+            return [self::DIAG_INCONSISTENT_REMOTE, sprintf('config="%s" vs git-remote="%s"', $this->repository, $gitOrigin[0])];
+        }
+        return [self::DIAG_OK, ''] ;
+    }
+
+    /**
+     *
+     * @return string ex. https://example.com/path/to/repository.git > https://example.com/path/to/repository
+     */
+    private function getRemoteRadix($repo): string
+    {
+        if (preg_match('/^(.*)\.git$/', $repo, $m)) {
+            return $m[1];
+        }
+        return $repo;
     }
 
     /**
@@ -76,12 +105,6 @@ class gitpPlugin {
             $msg = sprintf("ERROR ! Unable to access %s\n", $this->path);
             $this->output('chdir', [$msg], 0);
             return [RETURN_ERROR, ['ZZ' => 1]];
-        }
-        exec('git remote get-url origin', $gitOrigin);
-        if ($gitOrigin[0] !== $this->repository) {
-            $msg = sprintf("ERROR ! inconsistent repositories (config) %s vs (local) %s", $gitOrigin[0], $this->repository);
-            $this->output('git remote', [$msg], 0);
-            return [RETURN_ERROR, ['ZX' => 1]];
         }
         exec('git status', $gitOutput, $gitReturn);
         exec('git status --short | cut -c1-2', $statusShort, $trash);

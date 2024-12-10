@@ -134,13 +134,24 @@ EOSAMPLE;
 
     public function displayDiagnostic(): string
     {
-        $out = '';
-        foreach (gitpPlugin::DIAGMESSAGE as $error => $message) {
-            $out .= $message . " : \n";
+        // Structuration
+        $diagLines = [];
+        foreach (gitpPlugin::DIAG_MESSAGE as $diagCode => $message) {
+            if ($diagCode == gitpPlugin::DIAG_OK && $this->verbosity==0) {
+                continue;
+            }
             foreach ($this->plugins as $plugin) {
-                if ($plugin->diagnostic == $error) {
-                    $out .= "    * " . $plugin->name . " : " . $plugin->path . "\n";
+                if ($plugin->diagnostic == $diagCode) {
+                    $diagLines[$diagCode][] = sprintf("%s [%s]\n", $plugin->name, $plugin->diagComplement);
                 }
+            }
+        }
+        // Affichage
+        $out = "";
+        foreach ($diagLines as $diagCode => $lines) {
+            $out .= gitpPlugin::DIAG_MESSAGE[$diagCode] . sprintf(" (%d) :\n", count($lines));
+            foreach ($lines as $i => $line) {
+                $out .= sprintf("%3d. %s", $i+1, $line);
             }
             $out .= "\n";
         }
