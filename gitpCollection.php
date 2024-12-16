@@ -105,13 +105,10 @@ EOSAMPLE;
             }
             $summary[$index][] = $plugin->name;
         }
-        if (isset($summary[0])) {
-             echo $this->vecho("\n\nSTATUS OK :\n" . join(' ', $summary[0]), 1);
-        }
-        if (isset($summary[1])) {
-             echo $this->vecho("\n\nSTATUS ERRORS :\n" . join(' ', $summary[0]), 0);
-        }
-        echo "\n\n";
+
+        echo $this->vecho("\nSTATUS OK : " . print_r($summary[0], true), 1);
+        echo $this->vecho("\nSTATUS ERRORS : " . print_r($summary[1], true), 0);        
+        echo "\n";
         if ($summary_short) {
             echo "According to git status, there are local modification:\n";
             foreach ($summary_short as $plugin => $count) {

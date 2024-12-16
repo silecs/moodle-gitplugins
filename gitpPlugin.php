@@ -8,6 +8,8 @@ class gitpPlugin {
     const DIAG_MALFORMED = 3;
     const DIAG_INCONSISTENT_REMOTE = 4;
 
+    const GIT = '/usr/bin/git';
+
     const DIAG_MESSAGE = [
         self::DIAG_OK => 'OK: plugin directory exists, and is a git checkout',
         self::DIAG_NOT_EXIST => 'plugin directory DOES NOT exist',
@@ -72,7 +74,7 @@ class gitpPlugin {
             return [self::DIAG_NOT_GIT, $gitdir];
         }
         chdir($this->root . $this->path);
-        exec('git remote get-url origin', $gitOrigin);
+        $this->gitExec('remote get-url origin', $gitOrigin, $gitOutput);
         if (empty($this->repository) || empty($gitOrigin[0])) {
             return [self::DIAG_INCONSISTENT_REMOTE, sprintf('config="%s" vs git-remote="%s"', $this->repository, $gitOrigin[0])];
         }
@@ -98,23 +100,23 @@ class gitpPlugin {
 
     /**
      * get information with "git status"
-     * @fixme return mixed devrait être strictem
      */
     public function status(): array
     {
         $countStatus = [];
-        $cd = chdir($this->root . $this->path);
+        $dir = $this->root . $this->path;
+        $cd = chdir($dir);
         if (!$cd) {
             $msg = sprintf("ERROR ! Unable to access %s\n", $this->path);
-            $this->output('chdir', [$msg], 0);
+            $this->output("chdir $dir", [$msg], 0);
             return [RETURN_ERROR, ['ZZ' => 1]];
         }
-        exec('git status', $gitOutput, $gitReturn);
-        exec('git status --short | cut -c1-2', $statusShort, $trash);
+        $this->gitExec('status', $gitOutput, $gitReturn);
+        $this->gitExec('status --short | cut -c1-2', $statusShort, $trash);
         foreach ($statusShort as $flag) {
             $countStatus[$flag] = isset($countStatus[$flag]) ? $countStatus[$flag]+1 : 1;
         }
-        $this->output('git status', $gitOutput, 2);
+        $this->output('status', $gitOutput, 2);
         return [$gitReturn, $countStatus];
     }
 
@@ -131,11 +133,11 @@ class gitpPlugin {
             return RETURN_ERROR;
         }
 
-        exec('git remote -v', $gitOutput, $gitReturn);
-        $this->output('git remote -v', $gitOutput, 1);
+        $this->gitExec('remote -v', $gitOutput, $gitReturn);
+        $this->output('remote -v', $gitOutput, 1);
         unset($gitOuput);
-        exec('git branch -v -a', $branchOutput, $gitReturn);
-        $this->output('git branch -v -a', $branchOutput, 1);
+        $this->gitExec('branch -v -a', $branchOutput, $gitReturn);
+        $this->output('branch -v -a', $branchOutput, 1);
         return RETURN_OK;
     }
 
@@ -156,13 +158,13 @@ class gitpPlugin {
             return RETURN_ERROR;
         }
 
-        $cmdline = sprintf("git clone %s  --  %s %s",
+        $cmdline = sprintf("clone %s  --  %s %s",
                 (!empty($this->branch) ? '-b ' . $this->branch : ''),
                 $this->repository,
                 $this->root . $this->path
         );
-        exec($cmdline, $gitOutput, $gitReturn);
-        $this->output($cmdline, $gitOutput, 1, true);
+        $this->gitExec($cmdline, $gitOutput, $gitReturn, true);
+        $this->output($cmdline, $gitOutput, 1);
         return $gitReturn;
     }
 
@@ -183,41 +185,41 @@ class gitpPlugin {
             return RETURN_ERROR;
         }
 
-        exec('git log -1 --oneline', $gitOutput, $gitReturn);
-        $this->output(' git log -1 --oneline', $gitOutput);
+        $this->gitExec('log -1 --oneline', $gitOutput, $gitReturn);
+        $this->output('log -1 --oneline', $gitOutput);
         $gitOutput = [];
-        exec('git fetch', $gitOutput, $gitReturn);
-        $this->output('git fetch', $gitOutput);
+        $this->gitExec('fetch', $gitOutput, $gitReturn);
+        $this->output('fetch', $gitOutput);
 
         if (!empty($this->branch)) {
-            $cmdline = sprintf("git checkout %s", $this->branch);
-            exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, 1, true);
-            $cmdline = "git rebase";
-            exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, 1, true);
+            $cmdline = sprintf("checkout %s", $this->branch);
+            $this->gitExec($cmdline, $gitOutput, $gitReturn, true);
+            $this->output($cmdline, $gitOutput, 1);
+            $cmdline = "rebase";
+            $this->gitExec($cmdline, $gitOutput, $gitReturn, true);
+            $this->output($cmdline, $gitOutput, 1);
             return $gitReturn;
         } elseif (!empty($this->revision)) {
-            $cmdline = sprintf("git checkout %s", $this->revision);
-            exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, 1, true);
+            $cmdline = sprintf("checkout %s", $this->revision);
+            $this->gitExec($cmdline, $gitOutput, $gitReturn, true);
+            $this->output($cmdline, $gitOutput, 1);
             $cmdline = "git rebase";
-            exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, 1, true);
+            $this->gitExec($cmdline, $gitOutput, $gitReturn, true);
+            $this->output($cmdline, $gitOutput, 1);
             return $gitReturn;
         } else {
             $cmdline = "git rebase";
-            exec($cmdline, $gitOutput, $gitReturn);
-            $this->output($cmdline, $gitOutput, 1, true);
+            $this->gitExec($cmdline, $gitOutput, $gitReturn, true);
+            $this->output($cmdline, $gitOutput, 1);
             return $gitReturn;
         }
     }
 
     /**
      * check the plugin configuration file
-     * @return string  diagnostic message
+     * @return array of diagnostic messages
      */
-    public function check_config(): string
+    public function check_config(): array
     {
         $alerts = [];
 
@@ -231,12 +233,12 @@ class gitpPlugin {
             $alerts[] = sprintf('Invalid URL for repository: "%s"', $this->repository);
         }
 
-        $cmdline = sprintf('git ls-remote --exit-code  %s  %s',
+        $cmdline = sprintf('ls-remote --exit-code  %s  %s',
             str_replace('://', '://FAKE:FAKE@', $this->repository), //fake user/pass to avoid fallback on interactive cli
             (!empty($this->branch) ? $this->branch: '') );
-        exec($cmdline, $gitOutput, $gitReturn);
+        $this->gitExec($cmdline, $gitOutput, $gitReturn);
         if ($gitReturn) {
-            $alerts[] = sprintf('Git repository does not exist or unreachable or branch does not exist: "%s (%s)"' ,
+            $alerts[] = sprintf('Git remote repository does not exist or unreachable or branch does not exist: "%s (%s)"' ,
                     $this->repository, $this->branch);
         }
 
@@ -266,24 +268,37 @@ class gitpPlugin {
     }
 
     /**
+     *
+     * @return bool|string
+     */
+    private function gitExec(string $command, array &$output = null, int &$result = null, bool $log = false): mixed
+    {
+        $cmd = sprintf("%s %s", self::GIT, $command);
+        $res = exec($cmd, $output, $result);
+
+        if ($log) {
+            file_put_contents($this->logfile, sprintf("  < %s\n", $cmd), FILE_APPEND);
+            foreach ($output as $line) {
+                file_put_contents($this->logfile, sprintf("    > %s\n", $line), FILE_APPEND);
+            }
+        }
+        return $res;
+    }
+
+    /**
      * display the output on the terminal in an easily readable way (draft)
      * @param string $cmdline "input" command line
      * @param array $lines output lines
      * @param boolean $always : display whatever this->verbosity
      */
-    private function output($cmdline, $lines, $verbmin = 1, $log = false)
+    private function output($cmdline, $lines, $verbmin = 1)
     {
-        if ($this->verbosity >= $verbmin) {
-            echo "  < " . $cmdline . "\n";
-            foreach ($lines as $line) {
-                echo "    > " . $line . "\n";
-            }
+        if ($this->verbosity < $verbmin) {
+            return;
         }
-        if ($log) {
-            file_put_contents($this->logfile, sprintf("  < %s\n", $cmdline), FILE_APPEND);
-            foreach ($lines as $line) {
-                file_put_contents($this->logfile, sprintf("    > %s\n", $line), FILE_APPEND);
-            }
+        echo "  < git " . $cmdline . "\n";
+        foreach ($lines as $line) {
+            echo "    > " . $line . "\n";
         }
     }
 

@@ -8,7 +8,7 @@
  * @link      https://github.com/silecs/moodle-gitplugins
  * download from https://github.com/silecs/moodle-gitplugins/releases
  */
-const GITPLUGINS_VERSION = '2.2.2 2024-12-10';
+const GITPLUGINS_VERSION = '2.3.0 2024-12-17';
 
 if (php_sapi_name() !== 'cli') {
     die ('CLI mode only');
